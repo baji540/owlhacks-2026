@@ -353,7 +353,14 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
 
     // Gmail recycles row elements for new messages, so a row is "already scanned"
     // only while its contents are unchanged.
-    if (row.dataset.canaryScanned === 'true' && row.dataset.canaryFingerprint === data.fingerprint) {
+    // Skip only if this exact email is scanned AND its badge is still on screen.
+    // Gmail redraws rows (hover, read/unread, new mail) and can wipe the badge;
+    // in that case we must draw it again (the worker's cache makes this instant).
+    if (
+      row.dataset.canaryScanned === 'true' &&
+      row.dataset.canaryFingerprint === data.fingerprint &&
+      row.querySelector(`.${BADGE_CLASS}`)
+    ) {
       return;
     }
     if (inFlight.has(data.fingerprint)) return;
@@ -370,6 +377,7 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
       const verdict = await requestAnalysis(data);
       if (!verdict) {
         delete row.dataset.canaryScanned; // let a later pass retry
+        retrySoon();
         return;
       }
       if (verdict.paused) {
@@ -415,6 +423,7 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
       if (!verdict) {
         delete subjectEl.dataset.canaryScanned;
         delete subjectEl.dataset.canaryFingerprint;
+        retrySoon();
         return;
       }
       if (!subjectEl.isConnected || subjectEl.dataset.canaryFingerprint !== data.fingerprint) return;
@@ -485,6 +494,25 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
+
+  // Safety net: a failed request (e.g. the background worker was still waking up)
+  // gets another try shortly, and every few seconds we sweep for rows that lost
+  // their badge. Cached verdicts make this cheap.
+  let retryTimer = null;
+  function retrySoon() {
+    if (retryTimer) return;
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+      scheduleScan();
+    }, 1500);
+  }
+  setInterval(() => {
+    if (!extensionAlive || document.hidden) return;
+    const missing = Array.from(document.querySelectorAll(SELECTORS.listRow)).some(
+      (row) => !row.querySelector(`.${BADGE_CLASS}`),
+    );
+    if (missing) scheduleScan();
+  }, 3000);
 
   // Gmail navigates by changing the hash; rows get reused with new contents.
   window.addEventListener('hashchange', scheduleScan);
