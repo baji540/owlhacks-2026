@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Canary banner preview</title>
+    <link rel="stylesheet" href="injected-styles.css" />
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 760px; margin: 32px auto; padding: 0 16px; }
+      .fake-email { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+      .fake-email h3 { margin: 0 0 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Banner preview (no Gmail needed)</h1>
+    <p>Open this file in Chrome to see all three banner states.</p>
+    <div class="fake-email" id="e1"><h3>Your package is on the way</h3><p>From: Amazon</p></div>
+    <div class="fake-email" id="e2"><h3>Verify your account within 24 hours</h3><p>From: support@paypa1-help.com</p></div>
+    <div class="fake-email" id="e3"><h3>URGENT: Your Chase account is locked</h3><p>From: chase-alerts@secure-login.ru</p></div>
+
+    <script src="banner.js"></script>
+    <script>
+      renderWarningBanner(document.getElementById("e1"), {
+        score: "green",
+        simpleExplanation: "This email comes from Amazon's real address and has no risky links.",
+        actionRecommendation: "",
+      });
+      renderWarningBanner(document.getElementById("e2"), {
+        score: "yellow",
+        simpleExplanation: "The sender's address looks similar to PayPal but is spelled differently.",
+        actionRecommendation: "Don't click the link. Open the PayPal app or website yourself to check.",
+      });
+      renderWarningBanner(document.getElementById("e3"), {
+        score: "red",
+        simpleExplanation: "This message is pretending to be your bank to steal your password.",
+        actionRecommendation: "Do not click any links. Delete this email.",
+      });
+    </script>
+  </body>
+</html>
