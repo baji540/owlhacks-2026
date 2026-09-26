@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Canary — Phishing Traffic Light",
+  "name": "Canary : Phishing Traffic Light",
   "short_name": "Canary",
   "version": "0.1.0",
   "description": "Puts a plain-English green / yellow / red safety light on every email so scams are obvious before you click.",
