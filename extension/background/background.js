@@ -23,6 +23,68 @@ const SESSION_KEY = 'canary.session';
  * Heuristic vocabularies
  * ------------------------------------------------------------------ */
 
+/**
+ * Domains whose mail is genuine often enough that ordinary sales wording, order
+ * confirmations, and receipts must not raise a warning. Membership is about the
+ * *sending address*, not about anything the email claims — see isReputableSender.
+ */
+const REPUTABLE_DOMAINS = new Set([
+  // Tech
+  'apple.com',
+  'google.com',
+  'microsoft.com',
+  'amazon.com',
+  'samsung.com',
+  'meta.com',
+  // Streaming and media
+  'netflix.com',
+  'spotify.com',
+  'disneyplus.com',
+  'youtube.com',
+  'hulu.com',
+  'steampowered.com',
+  // Banking and finance
+  'chase.com',
+  'bankofamerica.com',
+  'wellsfargo.com',
+  'capitalone.com',
+  'citi.com',
+  'americanexpress.com',
+  'fidelity.com',
+  'vanguard.com',
+  // Retail and services
+  'paypal.com',
+  'target.com',
+  'walmart.com',
+  'ebay.com',
+  'uber.com',
+  'lyft.com',
+  'doordash.com',
+  // Shipping
+  'ups.com',
+  'fedex.com',
+  'usps.com',
+]);
+
+/**
+ * Sales pressure. Every retailer on earth writes like this, so it only counts
+ * against a sender we cannot verify.
+ */
+const PROMOTIONAL_URGENCY = new Set([
+  'act now',
+  'buy now',
+  'save big',
+  'limited time',
+  'limited time only',
+  'last chance',
+  'today only',
+  'ends tonight',
+  'final hours',
+  'while supplies last',
+  'exclusive offer',
+  'hurry',
+]);
+
 /** Pressure wording. Scammers need you to act before you think. */
 const URGENCY_PHRASES = [
   'urgent',
@@ -40,13 +102,15 @@ const URGENCY_PHRASES = [
   'password reset requested',
   'final warning',
   'last warning',
-  'act now',
   'within 24 hours',
   'within 48 hours',
   'avoid termination',
   'verify your account',
   'confirm your identity',
   'your account is locked',
+  // Sales pressure: a warning sign from a stranger, ordinary from a real store.
+  // Suppressed for reputable senders via PROMOTIONAL_URGENCY.
+  ...PROMOTIONAL_URGENCY,
 ];
 
 /** Money that cannot be clawed back once it is gone. */
@@ -235,12 +299,27 @@ const DOUBLE_EXTENSION_RE =
   /\.(pdf|docx?|xlsx?|pptx?|txt|jpe?g|png|gif|zip|rar|csv)\.(exe|scr|vbs|bat|cmd|com|pif|js|jse|hta|ps1|lnk)$/i;
 
 const RAW_IP_RE = /\b(?:\d{1,3}\.){3}\d{1,3}\b/;
+/** Link schemes that run code or reach outside the browser instead of opening a page. */
+const DANGEROUS_PROTOCOL_RE =
+  /(?:javascript:|vbscript:|file:\/\/|ftp:\/\/|data:text\/html|data:application\/)/i;
 const URL_RE = /\bhttps?:\/\/[^\s<>"')\]]+/gi;
 const BARE_DOMAIN_RE = /\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}\b/gi;
 const TRACKING_ID_RE = /\b(?:1Z[0-9A-Z]{16}|[0-9]{12,22}|[A-Z]{2}[0-9]{9}[A-Z]{2})\b/;
 
 /** Severity → points. The overall light comes from the total plus overrides. */
 const SEVERITY_POINTS = { low: 8, medium: 18, high: 34, critical: 60 };
+
+/**
+ * Findings that a whitelisted sending domain cannot excuse. A bare IP address or a
+ * link that runs code instead of opening a page means the mail is forged or the
+ * account is compromised, whoever it claims to be from.
+ */
+const TRUST_OVERRIDE_IDS = new Set([
+  'sender_raw_ip',
+  'link_raw_ip',
+  'link_dangerous_protocol',
+  'link_userinfo_trick',
+]);
 
 /* ------------------------------------------------------------------ *
  * Small helpers
@@ -288,6 +367,32 @@ function hostOfUrl(url) {
 /** `mail.chase.com` is within `chase.com`; `chase.com.evil.top` is not. */
 function isWithinDomain(host, base) {
   return host === base || host.endsWith(`.${base}`);
+}
+
+/** Is this hostname a whitelisted domain, or a genuine subdomain of one? */
+function isReputableDomain(domain) {
+  if (!domain) return false;
+  if (REPUTABLE_DOMAINS.has(domain)) return true;
+
+  for (const trusted of REPUTABLE_DOMAINS) {
+    if (domain.endsWith(`.${trusted}`)) return true;
+  }
+  return false;
+}
+
+/**
+ * Did this email really come from a whitelisted company?
+ *
+ * Reads the address out of `Name <user@host>` (or takes the whole string when
+ * there are no angle brackets), lowercases it, and keeps only the part after the
+ * final `@`. Subdomains pass, so `mailer.netflix.com` and `insideapple.apple.com`
+ * are trusted while `netflix.com.deals.top` and `netflix-billing.xyz` are not.
+ *
+ * @param {string} rawSender a full From line, or a bare email address
+ * @returns {boolean}
+ */
+function isReputableSender(rawSender) {
+  return isReputableDomain(domainOfAddress(extractEmailAddress(rawSender)));
 }
 
 function suspiciousTldOf(host) {
@@ -357,6 +462,7 @@ function evaluateEmail(data) {
   const senderEmail = extractEmailAddress(senderRaw);
   const senderName = extractDisplayName(senderRaw);
   const senderDomain = domainOfAddress(senderEmail);
+  const senderTrusted = isReputableDomain(senderDomain);
 
   const haystack = lower(`${senderName} ${senderEmail} ${subject} ${bodySnippet}`);
   // A link is judged on its own merits even when it matches the sender's domain —
@@ -365,27 +471,44 @@ function evaluateEmail(data) {
 
   const hits = [];
 
-  collectUrgencyHits(hits, haystack);
+  collectUrgencyHits(hits, haystack, senderTrusted);
   collectFinancialHits(hits, haystack);
   collectSenderHits(hits, { senderRaw, senderEmail, senderName, senderDomain, haystack });
   collectLinkHits(hits, { linkHosts, urls, senderDomain, haystack });
-  collectSoftHits(hits, { haystack, subject, bodySnippet, senderDomain });
+  collectProtocolHits(hits, `${subject} ${bodySnippet}`, input.links);
+  collectSoftHits(hits, { haystack, subject, bodySnippet, senderDomain, senderTrusted });
 
   const score = hits.reduce((total, hit) => total + SEVERITY_POINTS[hit.severity], 0);
-  const rating = decideRating(score, hits);
+  let rating = decideRating(score, hits);
+
+  // A verified sending domain clears ordinary marketing noise, but never a forged
+  // link. Anything in TRUST_OVERRIDE_IDS keeps its rating regardless of the sender.
+  const overriding = hits.find((hit) => TRUST_OVERRIDE_IDS.has(hit.id));
+  const trustSuppressed = senderTrusted && rating !== RATING.GREEN && !overriding;
+  if (trustSuppressed) rating = RATING.GREEN;
+
   const primary = pickPrimaryHit(hits);
   const categories = uniq(hits.map((hit) => hit.category));
 
   return {
     fingerprint: asText(input.fingerprint),
     score: rating, // traffic light, per the agreed payload shape
-    riskPoints: Math.min(100, score),
+    riskPoints: trustSuppressed ? 0 : Math.min(100, score),
     confidence: describeConfidence(rating, hits),
-    threatCategory: primary ? primary.category : 'none',
-    threatLabel: primary ? primary.label : 'Nothing suspicious found',
+    senderTrusted,
+    trustSuppressed,
+    threatCategory: primary && !trustSuppressed ? primary.category : 'none',
+    threatLabel:
+      primary && !trustSuppressed ? primary.label : 'Nothing suspicious found',
     threatCategories: categories.length ? categories : ['none'],
-    simpleExplanation: composeExplanation(rating, hits, { senderName, senderEmail, senderDomain }),
-    actionRecommendation: composeRecommendation(rating, categories),
+    simpleExplanation: composeExplanation(rating, hits, {
+      senderName,
+      senderEmail,
+      senderDomain,
+      senderTrusted,
+      trustSuppressed,
+    }),
+    actionRecommendation: composeRecommendation(rating, categories, senderTrusted),
     badge: badgeFor(rating),
     reasons: hits.map((hit) => ({
       id: hit.id,
@@ -402,8 +525,15 @@ function evaluateEmail(data) {
   };
 }
 
-function collectUrgencyHits(hits, haystack) {
-  const found = findPhrases(haystack, URGENCY_PHRASES);
+function collectUrgencyHits(hits, haystack, senderTrusted) {
+  const matched = findPhrases(haystack, URGENCY_PHRASES);
+
+  // "Last chance, save big" is a sale when it comes from Target, and a warning
+  // sign when it comes from a stranger.
+  const found = senderTrusted
+    ? matched.filter((phrase) => !PROMOTIONAL_URGENCY.has(phrase))
+    : matched;
+
   if (!found.length) return;
 
   // Longest match reads best in an explanation ("account suspended" > "suspended").
@@ -601,6 +731,7 @@ function collectLinkHits(hits, ctx) {
   // the company's own website. It only becomes phishing when the destination is
   // somewhere we cannot vouch for.
   const unvouchedLinks = linkHosts.filter((host) => {
+    if (isReputableDomain(host)) return false;
     if (IMPOSTER_BRANDS.some((brand) => brand.legit.some((base) => isWithinDomain(host, base)))) {
       return false;
     }
@@ -624,8 +755,32 @@ function collectLinkHits(hits, ctx) {
   }
 }
 
+/**
+ * Links that are not really web addresses. Kept separate because these survive the
+ * reputable-sender whitelist — no real company sends one, so seeing one means the
+ * message is forged or the account behind it is compromised.
+ */
+function collectProtocolHits(hits, rawText, declaredLinks) {
+  const inText = DANGEROUS_PROTOCOL_RE.exec(asText(rawText))?.[0];
+  const inLinks = (Array.isArray(declaredLinks) ? declaredLinks : []).find((link) =>
+    /^(?!https?:)[a-z][a-z0-9+.-]*:/i.test(asText(link)),
+  );
+
+  const offender = inText || inLinks;
+  if (!offender) return;
+
+  hits.push({
+    id: 'link_dangerous_protocol',
+    category: 'malicious_link',
+    severity: 'critical',
+    label: 'Link runs a command instead of opening a page',
+    evidence: asText(offender).slice(0, 60),
+    plain: `One link is not an ordinary web address at all — it starts with ${quote(asText(offender).split(/[/?#]/)[0])}, which tells your computer to run something rather than show you a page. No real company ever sends a link like that.`,
+  });
+}
+
 function collectSoftHits(hits, ctx) {
-  const { haystack, subject, bodySnippet } = ctx;
+  const { haystack, subject, bodySnippet, senderTrusted } = ctx;
 
   const delivery = findPhrases(haystack, DELIVERY_PHRASES);
   if (delivery.length && !TRACKING_ID_RE.test(`${subject} ${bodySnippet}`)) {
@@ -648,10 +803,12 @@ function collectSoftHits(hits, ctx) {
     hits.push({
       id: 'bulk_marketing',
       category: 'bulk_marketing',
-      severity: onlyUnsubscribeLink ? 'low' : 'medium',
+      severity: onlyUnsubscribeLink || senderTrusted ? 'low' : 'medium',
       label: 'Looks like bulk advertising',
       evidence: marketing[0],
-      plain: 'This reads like an advertisement sent to a large mailing list rather than a personal message written to you. It is probably not dangerous, but nothing in it has been vouched for either.',
+      plain: senderTrusted
+        ? 'This is an advertisement sent to a large mailing list rather than a personal message. It comes from the company it claims to, so it is safe to read, ignore, or unsubscribe from.'
+        : 'This reads like an advertisement sent to a large mailing list rather than a personal message written to you. It is probably not dangerous, but nothing in it has been vouched for either.',
     });
   }
 }
@@ -710,6 +867,20 @@ function badgeFor(rating) {
 
 function composeExplanation(rating, hits, sender) {
   if (rating === RATING.GREEN) {
+    if (sender.senderTrusted) {
+      const base = `This really was sent from ${quote(sender.senderDomain)}, a verified address belonging to a company we recognise.`;
+
+      if (!sender.trustSuppressed) {
+        return `${base} Canary checked the wording and every link and found nothing dangerous.`;
+      }
+
+      // Say *why* we stood down. Calling a genuine fraud alert "pushy sales
+      // wording" would be both wrong and dangerous.
+      return hits.some((hit) => hit.category === 'bulk_marketing')
+        ? `${base} It is trying to sell you something, so the wording is pushy, but there is nothing in it that can harm you.`
+        : `${base} A few phrases in it would normally make Canary cautious, but because the message genuinely came from them, there is nothing here that can harm you. If it asks you to do something important, it is still safest to contact the company the way you normally would rather than through this email.`;
+    }
+
     const who = sender.senderDomain ? ` from ${quote(sender.senderDomain)}` : '';
     const base = `Canary checked who sent this${who}, the wording, and every link, and found nothing dangerous.`;
     return hits.length
@@ -733,7 +904,11 @@ function composeExplanation(rating, hits, sender) {
   return `${opener} ${body.join(' ')}${extra}`.trim();
 }
 
-function composeRecommendation(rating, categories) {
+function composeRecommendation(rating, categories, senderTrusted) {
+  if (rating === RATING.GREEN && senderTrusted && categories.includes('bulk_marketing')) {
+    return 'This is a genuine message from a company you can look up, so there is nothing to worry about. If you would rather not receive these, use the unsubscribe link at the bottom instead of replying.';
+  }
+
   if (rating === RATING.RED) {
     if (categories.includes('wire_fraud')) {
       return 'Do not send any money, gift cards, or account numbers, and do not reply. If someone claims to need payment urgently, hang up or close the email and call that company yourself using a number you already have. Then delete this message.';
