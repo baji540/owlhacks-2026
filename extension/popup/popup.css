@@ -1,87 +1,171 @@
-:root {
-  --ink: #111;
-  --muted: #444;
-  --bg: #fff;
-  --line: #d6d6d6;
-  --green: #1e7b3c;
-  --yellow: #a86b00;
-  --red: #b3261e;
-  --blue: #1a56db;
-  --fs: 16px;
+/* extension/popup/popup.css (owner: Masnun)
+   Matches the canary.fishing site: Inter, dark teal-navy surfaces, #008080 accent.
+   Tokens copied from canary-fishing/src/index.css so both stay in sync. */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fonts/inter-latin.woff2") format("woff2");
 }
-body.big { --fs: 20px; }
+
+:root {
+  --teal-300: #6dd0c6;
+  --teal-500: #008080;
+  --teal-600: #006666;
+
+  --bg: #071b20;
+  --bg-muted: #0b242a;
+  --card: #123540;
+  --border: #24515d;
+
+  --text: #f3f7f8;
+  --text-muted: #93aeb8;
+
+  --success: #34d399;
+  --success-bg: #113828;
+  --warning: #fb923c;
+  --warning-bg: #3a2412;
+  --danger: #f87171;
+  --danger-bg: #3a1414;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+
+  --fs: 15px;
+}
+body.big { --fs: 19px; }
 
 * { box-sizing: border-box; }
+
 body {
   width: 360px;
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: var(--fs);
-  line-height: 1.45;
-  color: var(--ink);
+  line-height: 1.5;
+  color: var(--text);
   background: var(--bg);
+  -webkit-font-smoothing: antialiased;
 }
+
+/* ---------- Header / logo (links to canary.fishing) ---------- */
 
 .top {
+  padding: 14px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+.brand:hover .brand-mark { background: var(--teal-600); }
+.brand:focus-visible { outline: 2px solid var(--teal-300); outline-offset: 3px; }
+
+.brand-mark {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  background: #0f1d5c;
-  color: #fff;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--teal-500);
+  transition: background 0.15s ease;
 }
-.logo { font-size: 32px; }
-h1 { margin: 0; font-size: 1.35em; }
-.sub { margin: 0; font-size: 0.85em; opacity: 0.85; }
+.brand-rod { position: absolute; inset: 0; width: 100%; height: 100%; }
+.brand-bird {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  color: #fff;
+  stroke-width: 2.4;
+  transform: translate(2px, -9px);
+}
 
-main { padding: 16px; display: grid; gap: 14px; }
+.brand-text { display: flex; flex-direction: column; }
+.brand-name { font-size: 1.15em; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+.brand-sub { font-size: 0.8em; color: var(--text-muted); }
+
+/* Lucide "bird" icon, the same one drawn on the Gmail badges */
+.bird {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- Status card ---------- */
+
+main { padding: 16px; display: grid; gap: 12px; }
 
 .status {
   display: flex;
   gap: 14px;
   align-items: flex-start;
   padding: 14px;
-  border-radius: 12px;
-  border: 3px solid var(--line);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--card);
 }
-.status h2 { margin: 0 0 4px; font-size: 1.2em; }
-.status p { margin: 0; }
+.status h2 { margin: 0 0 4px; font-size: 1.1em; font-weight: 700; line-height: 1.3; }
+.status p { margin: 0; color: var(--text-muted); }
+
 .light {
+  --ink: var(--teal-500);
   flex: none;
-  width: 40px;
-  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: #bbb;
+  background: var(--ink);
+  color: #fff;
 }
-.status-green  { border-color: var(--green);  background: #e9f7ee; }
-.status-yellow { border-color: var(--yellow); background: #fff6d6; }
-.status-red    { border-color: var(--red);    background: #fdeaea; }
-.status-green  .light { background: var(--green); }
-.status-yellow .light { background: var(--yellow); }
-.status-red    .light { background: var(--red); }
+.light .bird { width: 24px; height: 24px; }
+
+.status-green  { background: var(--success-bg); border-color: var(--success); }
+.status-yellow { background: var(--warning-bg); border-color: var(--warning); }
+.status-red    { background: var(--danger-bg);  border-color: var(--danger); }
+.status-green  .light { --ink: var(--success); color: var(--bg); }
+.status-yellow .light { --ink: var(--warning); color: var(--bg); }
+.status-red    .light { --ink: var(--danger);  color: var(--bg); }
+.status-green p, .status-yellow p, .status-red p { color: var(--text); }
 
 .action {
   padding: 12px 14px;
-  border-radius: 10px;
-  background: #f3f3f3;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
 }
+.action strong { color: var(--teal-300); }
 
-.legend { display: grid; gap: 6px; font-size: 0.95em; }
-.dot {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  margin-right: 8px;
-  vertical-align: -1px;
+/* ---------- Settings ---------- */
+
+.settings {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
-.dot.green { background: var(--green); }
-.dot.yellow { background: var(--yellow); }
-.dot.red { background: var(--red); }
-
-.settings { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
 .toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-.toggle input { width: 22px; height: 22px; accent-color: var(--blue); }
-
-footer { padding: 10px 16px 14px; text-align: center; font-size: 0.85em; }
-footer a { color: var(--blue); }
+.toggle input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--teal-500);
+  cursor: pointer;
+}
+.toggle input:focus-visible { outline: 2px solid var(--teal-300); outline-offset: 2px; }
