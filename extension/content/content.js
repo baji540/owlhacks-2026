@@ -347,6 +347,95 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
 
   const inFlight = new Set();
 
+  /* ---------------------------------------------------------------- *
+   * One verdict per email
+   *
+   * An inbox row only shows the sender, subject and a one-line preview, so its
+   * verdict can be milder than the verdict for the full opened email (which also
+   * sees the whole body and every link). Once an email has been opened, its
+   * full verdict is remembered by Gmail's thread id and used for the inbox row
+   * too, so the bird can never be yellow outside and red inside.
+   * ---------------------------------------------------------------- */
+
+  const THREAD_STORE_KEY = 'canaryThreadVerdicts';
+  const THREAD_STORE_LIMIT = 300;
+  const threadVerdicts = new Map();
+
+  const threadStoreReady = (async () => {
+    try {
+      const saved = await chrome.storage.local.get(THREAD_STORE_KEY);
+      Object.entries(saved?.[THREAD_STORE_KEY] ?? {}).forEach(([id, verdict]) =>
+        threadVerdicts.set(id, verdict),
+      );
+    } catch {
+      /* storage unavailable: fall back to per-view verdicts */
+    }
+  })();
+
+  function threadIdOf(el) {
+    if (!el) return null;
+    const holder = el.matches?.('[data-legacy-thread-id]')
+      ? el
+      : el.querySelector?.('[data-legacy-thread-id]');
+    return holder?.getAttribute('data-legacy-thread-id') || null;
+  }
+
+  function slimVerdict(verdict) {
+    const { score, badge, threatLabel, simpleExplanation, actionRecommendation, reasons } = verdict;
+    return { score, badge, threatLabel, simpleExplanation, actionRecommendation, reasons };
+  }
+
+  function rememberThreadVerdict(threadId, verdict) {
+    if (!threadId) return;
+    threadVerdicts.delete(threadId); // re-insert so the newest stays at the end
+    threadVerdicts.set(threadId, slimVerdict(verdict));
+    while (threadVerdicts.size > THREAD_STORE_LIMIT) {
+      threadVerdicts.delete(threadVerdicts.keys().next().value);
+    }
+    try {
+      void chrome.storage.local.set({ [THREAD_STORE_KEY]: Object.fromEntries(threadVerdicts) });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function badgeRow(row, verdict) {
+    removeExistingBadge(row);
+    const subjectBlock = row.querySelector(SELECTORS.listSubjectBlock);
+    const host = subjectBlock ?? row.querySelector(SELECTORS.listSubject)?.parentElement;
+    attachBadge(host ?? row.lastElementChild, buildBadge(verdict), subjectBlock ? 'before' : 'append');
+  }
+
+  /** Inbox rows whose bird disagrees with the remembered full-email verdict. */
+  function rowIsStale(row) {
+    const known = threadVerdicts.get(threadIdOf(row));
+    if (!known) return false;
+    return row.querySelector(`.${BADGE_CLASS}`)?.dataset?.[BADGE_FLAG] !== known.score;
+  }
+
+  /** Tell the toolbar popup which email is open (or that none is). */
+  let popupShowsThread = null;
+  function publishToPopup(verdict, subject) {
+    const key = verdict ? `${subject}|${verdict.score}` : '';
+    if (key === popupShowsThread) return;
+    popupShowsThread = key;
+    try {
+      void chrome.storage.local.set({
+        lastScan: verdict
+          ? {
+              score: verdict.score,
+              subject,
+              threatLabel: verdict.threatLabel,
+              simpleExplanation: verdict.simpleExplanation,
+              actionRecommendation: verdict.actionRecommendation,
+            }
+          : null,
+      });
+    } catch {
+      /* ignore */
+    }
+  }
+
   async function scanRow(row) {
     const data = extractFromRow(row);
     if (!data) return;
@@ -356,10 +445,12 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
     // Skip only if this exact email is scanned AND its badge is still on screen.
     // Gmail redraws rows (hover, read/unread, new mail) and can wipe the badge;
     // in that case we must draw it again (the worker's cache makes this instant).
+    await threadStoreReady;
     if (
       row.dataset.canaryScanned === 'true' &&
       row.dataset.canaryFingerprint === data.fingerprint &&
-      row.querySelector(`.${BADGE_CLASS}`)
+      row.querySelector(`.${BADGE_CLASS}`) &&
+      !rowIsStale(row)
     ) {
       return;
     }
@@ -374,7 +465,8 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
     inFlight.add(data.fingerprint);
 
     try {
-      const verdict = await requestAnalysis(data);
+      // An email that has been opened already has a full verdict: use that one.
+      const verdict = threadVerdicts.get(threadIdOf(row)) ?? (await requestAnalysis(data));
       if (!verdict) {
         delete row.dataset.canaryScanned; // let a later pass retry
         retrySoon();
@@ -387,10 +479,7 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
       // The row may have been recycled while we waited.
       if (row.dataset.canaryFingerprint !== data.fingerprint || !row.isConnected) return;
 
-      removeExistingBadge(row);
-      const subjectBlock = row.querySelector(SELECTORS.listSubjectBlock);
-      const host = subjectBlock ?? row.querySelector(SELECTORS.listSubject)?.parentElement;
-      attachBadge(host ?? row.lastElementChild, buildBadge(verdict), subjectBlock ? 'before' : 'append');
+      badgeRow(row, verdict);
     } finally {
       inFlight.delete(data.fingerprint);
     }
@@ -399,7 +488,10 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
   async function scanOpenThread() {
     const main = document.querySelector(SELECTORS.threadContainer);
     const subjectEl = main?.querySelector(SELECTORS.threadSubject);
-    if (!subjectEl) return;
+    if (!subjectEl) {
+      publishToPopup(null); // back in the inbox: popup goes back to "Open an email"
+      return;
+    }
 
     const messages = main?.querySelectorAll(SELECTORS.threadMessage);
     // Expanded messages carry a sender; the newest one is what the reader sees.
@@ -433,6 +525,16 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
 
       // Inside the <h2> so the pill sits on the subject's baseline.
       attachBadge(subjectEl, buildBadge(verdict), 'append');
+
+      // Make the inbox row for this email match, now and on every later visit.
+      const threadId = threadIdOf(subjectEl);
+      rememberThreadVerdict(threadId, verdict);
+      if (threadId) {
+        document.querySelectorAll(SELECTORS.listRow).forEach((row) => {
+          if (threadIdOf(row) === threadId) badgeRow(row, verdict);
+        });
+      }
+      publishToPopup(verdict, data.subject);
     } finally {
       inFlight.delete(data.fingerprint);
     }
@@ -445,7 +547,13 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
     let scanned = 0;
     for (const row of rows) {
       if (scanned >= MAX_ROWS_PER_PASS) break;
-      if (row.dataset.canaryScanned === 'true' && row.querySelector(`.${BADGE_CLASS}`)) continue;
+      if (
+        row.dataset.canaryScanned === 'true' &&
+        row.querySelector(`.${BADGE_CLASS}`) &&
+        !rowIsStale(row)
+      ) {
+        continue;
+      }
       void scanRow(row);
       scanned += 1;
     }
