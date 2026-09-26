@@ -24,19 +24,19 @@ export function BrandMark({ className }: BrandMarkProps) {
           {/* Fishing rod: thin tapered pole confined to the open space below the
               bird's feet, with a trailing line + hook past the tip */}
           <polygon
-            points="1.29,35.85 33.08,24.24 32.92,23.76 0.71,34.15"
+            points="1.29,35.85 33.18,24.52 32.82,23.48 0.71,34.15"
             fill="#ffffff"
             opacity="0.85"
           />
           <path
-            d="M33 24 Q36 25.5 34.5 29"
+            d="M33,24 Q33.9,25.5 32.8,26.8"
             fill="none"
             stroke="#ffffff"
             strokeWidth="1"
             strokeLinecap="round"
-            opacity="0.6"
+            opacity="0.95"
           />
-          <circle cx="34.5" cy="29" r="1" fill="#ffffff" opacity="0.6" />
+          <circle cx="32.8" cy="26.8" r="0.85" fill="#ffffff" opacity="0.95" />
         </svg>
 
         <Bird
