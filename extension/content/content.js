@@ -1,3 +1,4 @@
+console.log("🐤 CANARY: content.js loaded on", window.location.href);
 'use strict';
 
 /**
