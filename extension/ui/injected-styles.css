@@ -1,101 +1,211 @@
 /* extension/ui/injected-styles.css — owner: Masnun
-   Styles for the banner injected into Gmail. Everything is prefixed
-   "canary-" so it never clashes with Gmail's own CSS.
-   Designed for older readers: large text, high contrast, not colour-only. */
+   Styles injected into Gmail. Everything is prefixed "canary-" so it never clashes
+   with Gmail's CSS. Built for older readers: large text in the card, high contrast,
+   and meaning never carried by colour alone (every badge has an aria-label and
+   every card says Safe / Caution / Scam alert in words). */
+
+:root {
+  --canary-bird: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M16 7h.01'/><path d='M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20'/><path d='m20 7 2 .5-2 .5'/><path d='M10 18v3'/><path d='M14 17.75V21'/><path d='M7 18a6 6 0 0 0 3.84-10.61'/></svg>");
+  --canary-green: #1e7b3c;
+  --canary-green-tint: #e6f4ea;
+  --canary-yellow: #b06d00;
+  --canary-yellow-tint: #fff3d1;
+  --canary-red: #c5221f;
+  --canary-red-tint: #fce8e6;
+}
+
+/* ================================================================
+   Badge — tiny coloured canary next to each subject.
+   Ari's content.js creates <span class="canary-badge canary-{score}">🔴 Scam Alert</span>;
+   we hide that text visually (screen readers still get the aria-label)
+   and draw the bird in its place.
+   ================================================================ */
+
+.canary-badge {
+  --ink: var(--canary-green);
+  --tint: var(--canary-green-tint);
+  position: relative;
+  display: inline-block !important;
+  flex: none;
+  width: 20px !important;
+  height: 20px !important;
+  margin: 0 6px 0 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50%;
+  background: var(--tint) !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: transparent !important;
+  vertical-align: -5px;
+  overflow: hidden;
+  cursor: default;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.canary-badge::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  background-color: var(--ink);
+  -webkit-mask: var(--canary-bird) center / contain no-repeat;
+  mask: var(--canary-bird) center / contain no-repeat;
+}
+
+.canary-badge.canary-yellow { --ink: var(--canary-yellow); --tint: var(--canary-yellow-tint); }
+.canary-badge.canary-red    { --ink: var(--canary-red);    --tint: var(--canary-red-tint); }
+
+/* Yellow and red are clickable (they open the explanation card) */
+.canary-badge.canary-yellow,
+.canary-badge.canary-red { cursor: pointer; }
+.canary-badge.canary-red { box-shadow: 0 0 0 1.5px var(--canary-red); }
+.canary-badge.canary-yellow:hover,
+.canary-badge.canary-red:hover { transform: scale(1.15); }
+.canary-badge:focus-visible { outline: 2px solid #1a56db; outline-offset: 2px; }
+
+/* Slightly larger inside an opened email's subject line */
+h2.hP .canary-badge {
+  width: 24px !important;
+  height: 24px !important;
+  margin: 0 0 0 10px !important;
+  vertical-align: -4px;
+}
+
+/* ================================================================
+   Explanation card
+   ================================================================ */
 
 .canary-banner {
   all: initial; /* shield from Gmail styles */
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  margin: 12px 0 16px;
-  padding: 18px 20px;
+  gap: 14px;
+  margin: 10px 0 14px;
+  padding: 16px 18px;
   border-radius: 12px;
-  border: 3px solid;
+  border: 2px solid;
+  background: #fff;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.5;
   color: #111;
-  animation: canary-in 0.25s ease-out;
+  animation: canary-in 0.18s ease-out;
+}
+.canary-banner * { box-sizing: border-box; font-family: inherit; }
+
+.canary-banner-green  { background: var(--canary-green-tint);  border-color: var(--canary-green); }
+.canary-banner-yellow { background: var(--canary-yellow-tint); border-color: var(--canary-yellow); }
+.canary-banner-red    { background: var(--canary-red-tint);    border-color: var(--canary-red); }
+
+.canary-banner-floating {
+  position: fixed;
+  z-index: 2147483000;
+  margin: 0;
+  padding: 14px 16px;
+  font-size: 16px;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.canary-banner * {
-  box-sizing: border-box;
-  font-family: inherit;
-}
-
-.canary-green  { background: #e9f7ee; border-color: #1e7b3c; }
-.canary-yellow { background: #fff6d6; border-color: #a86b00; }
-.canary-red    { background: #fdeaea; border-color: #b3261e; }
-
-.canary-icon {
+.canary-banner-icon {
+  --ink: var(--canary-green);
+  position: relative;
   flex: none;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  font-weight: 800;
-  color: #fff;
+  background: var(--ink);
 }
-.canary-green  .canary-icon { background: #1e7b3c; }
-.canary-yellow .canary-icon { background: #a86b00; }
-.canary-red    .canary-icon { background: #b3261e; }
+.canary-banner-icon::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  background-color: #fff;
+  -webkit-mask: var(--canary-bird) center / contain no-repeat;
+  mask: var(--canary-bird) center / contain no-repeat;
+}
+.canary-banner-yellow .canary-banner-icon { --ink: var(--canary-yellow); }
+.canary-banner-red    .canary-banner-icon { --ink: var(--canary-red); }
 
-.canary-body { flex: 1; min-width: 0; }
+.canary-banner-body { flex: 1; min-width: 0; }
 
-.canary-tag {
-  font-size: 14px;
+.canary-banner-tag {
+  display: block;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #444;
 }
-
-.canary-title {
-  margin: 2px 0 6px;
-  font-size: 22px;
+.canary-banner-title {
+  display: block;
+  margin: 2px 0 4px;
+  font-size: 20px;
   font-weight: 800;
   line-height: 1.3;
   color: #111;
 }
-.canary-red .canary-title { color: #8c1d18; }
+.canary-banner-red .canary-banner-title { color: #8c1d18; }
 
-.canary-explain,
-.canary-action {
+.canary-banner-reason {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 700;
+  color: #222;
+}
+
+.canary-banner-explain,
+.canary-banner-action {
+  display: block;
   margin: 0 0 6px;
-  font-size: 18px;
+  font-size: 17px;
   color: #111;
 }
-
-.canary-action {
+.canary-banner-action {
   margin-top: 10px;
-  padding: 10px 14px;
+  padding: 10px 12px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.8);
 }
+.canary-banner strong { font-weight: 700; }
 
-.canary-close {
+.canary-banner-close {
+  all: initial;
   flex: none;
   cursor: pointer;
-  padding: 8px 14px;
-  font-size: 16px;
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: 15px;
   font-weight: 600;
   color: #111;
   background: #fff;
   border: 2px solid #555;
   border-radius: 8px;
 }
-.canary-close:hover { background: #f0f0f0; }
-.canary-close:focus-visible { outline: 3px solid #1a56db; outline-offset: 2px; }
+.canary-banner-close:hover { background: #f0f0f0; }
+.canary-banner-close:focus-visible { outline: 3px solid #1a56db; outline-offset: 2px; }
+
+/* Floating card (inbox list): compact, Hide pinned top-right so the text gets full width */
+.canary-banner-floating .canary-banner-icon { width: 32px; height: 32px; }
+.canary-banner-floating .canary-banner-icon::before { inset: 6px; }
+.canary-banner-floating .canary-banner-body { padding-right: 64px; }
+.canary-banner-floating .canary-banner-title { font-size: 18px; }
+.canary-banner-floating .canary-banner-explain,
+.canary-banner-floating .canary-banner-action { font-size: 16px; }
+.canary-banner-floating .canary-banner-action { margin-right: -64px; }
+.canary-banner-floating .canary-banner-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 5px 12px;
+  font-size: 14px;
+}
 
 @keyframes canary-in {
-  from { opacity: 0; transform: translateY(-6px); }
+  from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .canary-banner { animation: none; }
+  .canary-banner, .canary-badge { animation: none; transition: none; }
 }

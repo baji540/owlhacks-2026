@@ -2,38 +2,83 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Canary banner preview</title>
+    <title>Canary UI preview</title>
     <link rel="stylesheet" href="injected-styles.css" />
     <style>
-      body { font-family: system-ui, sans-serif; max-width: 760px; margin: 32px auto; padding: 0 16px; }
-      .fake-email { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
-      .fake-email h3 { margin: 0 0 8px; }
+      body { font-family: Roboto, Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; color: #202124; }
+      h1 { font-size: 20px; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; background: #f6f8fc; }
+      tr.zA td { padding: 10px 8px; border-bottom: 1px solid #e0e0e0; }
+      .yW { width: 180px; font-weight: 700; }
+      .xT { display: flex; align-items: center; min-width: 0; }
+      .y6 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .bog { font-weight: 700; }
+      .y2 { color: #5f6368; }
+      .thread { margin-top: 32px; border: 1px solid #ddd; border-radius: 8px; padding: 16px 20px; }
+      .ha { display: flex; align-items: center; }
+      h2.hP { font-size: 22px; font-weight: 400; margin: 0; }
+      .a3s { margin-top: 12px; }
     </style>
   </head>
   <body>
-    <h1>Banner preview (no Gmail needed)</h1>
-    <p>Open this file in Chrome to see all three banner states.</p>
-    <div class="fake-email" id="e1"><h3>Your package is on the way</h3><p>From: Amazon</p></div>
-    <div class="fake-email" id="e2"><h3>Verify your account within 24 hours</h3><p>From: support@paypa1-help.com</p></div>
-    <div class="fake-email" id="e3"><h3>URGENT: Your Chase account is locked</h3><p>From: chase-alerts@secure-login.ru</p></div>
+    <h1>Canary UI preview — fake Gmail, real Canary styles</h1>
+    <p>Click the yellow or red bird to open the explanation, then click <b>Hide</b>.</p>
+
+    <table>
+      <tbody>
+        <tr class="zA" data-score="green"><td class="yW"><span email="ship-confirm@amazon.com">Amazon</span></td>
+          <td><div class="xT"><div class="y6"><span class="bog">Your package is on the way</span><span class="y2"> - Arriving Tuesday</span></div></div></td></tr>
+        <tr class="zA" data-score="yellow"><td class="yW"><span email="support@paypa1-help.com">PayPal Support</span></td>
+          <td><div class="xT"><div class="y6"><span class="bog">Unusual activity on your account</span><span class="y2"> - Please review</span></div></div></td></tr>
+        <tr class="zA" data-score="red"><td class="yW"><span email="alerts@chase-update.top">Chase Security</span></td>
+          <td><div class="xT"><div class="y6"><span class="bog">URGENT: your account suspended</span><span class="y2"> - Sign in to confirm</span></div></div></td></tr>
+      </tbody>
+    </table>
+
+    <div class="thread">
+      <div class="ha"><h2 class="hP" data-score="red">URGENT: your account suspended</h2></div>
+      <div class="a3s">Immediate action required. Sign in to confirm your card…</div>
+    </div>
 
     <script src="banner.js"></script>
     <script>
-      renderWarningBanner(document.getElementById("e1"), {
-        score: "green",
-        simpleExplanation: "This email comes from Amazon's real address and has no risky links.",
-        actionRecommendation: "",
+      // Same badge markup and click behaviour as Ari's content.js (buildBadge).
+      const VERDICTS = {
+        green: { score: "green", simpleExplanation: "Nothing risky found in this email." },
+        yellow: {
+          score: "yellow", threatLabel: "Look-alike sender address",
+          simpleExplanation: "This email says it is from PayPal, but the address is spelled “paypa1-help.com” with a number 1.",
+          actionRecommendation: "Don't click the link. Open the PayPal app or website yourself to check.",
+        },
+        red: {
+          score: "red", threatLabel: "Pretends to be Chase",
+          simpleExplanation: "This is almost certainly a scam. It looks like it is from Chase, but it was sent from “chase-update.top”. A real Chase message always ends in “chase.com”.",
+          actionRecommendation: "Do not click anything in this email and do not type your password anywhere it sends you.",
+        },
+      };
+      const TEXT = { green: "🟢 Safe", yellow: "🟡 Caution", red: "🔴 Scam Alert" };
+
+      function buildBadge(verdict) {
+        const el = document.createElement("span");
+        el.className = `canary-badge canary-${verdict.score}`;
+        el.textContent = TEXT[verdict.score];
+        el.setAttribute("aria-label", TEXT[verdict.score]);
+        if (verdict.score === "green") { el.setAttribute("role", "img"); return el; }
+        el.setAttribute("role", "button");
+        el.tabIndex = 0;
+        const open = (e) => { e.preventDefault(); e.stopPropagation(); window.renderWarningBanner(el, verdict); };
+        el.addEventListener("click", open);
+        el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") open(e); });
+        el.addEventListener("mousedown", (e) => e.stopPropagation());
+        return el;
+      }
+
+      document.querySelectorAll("tr.zA").forEach((row) => {
+        const y6 = row.querySelector(".y6");
+        y6.parentElement.insertBefore(buildBadge(VERDICTS[row.dataset.score]), y6);
       });
-      renderWarningBanner(document.getElementById("e2"), {
-        score: "yellow",
-        simpleExplanation: "The sender's address looks similar to PayPal but is spelled differently.",
-        actionRecommendation: "Don't click the link. Open the PayPal app or website yourself to check.",
-      });
-      renderWarningBanner(document.getElementById("e3"), {
-        score: "red",
-        simpleExplanation: "This message is pretending to be your bank to steal your password.",
-        actionRecommendation: "Do not click any links. Delete this email.",
-      });
+      const h2 = document.querySelector("h2.hP");
+      h2.appendChild(buildBadge(VERDICTS[h2.dataset.score]));
     </script>
   </body>
 </html>
