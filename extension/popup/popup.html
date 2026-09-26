@@ -30,7 +30,12 @@
       </a>
     </header>
 
-    <main>
+    <nav class="tabs" role="tablist" aria-label="Canary sections">
+      <button type="button" class="tab" role="tab" id="tab-btn-status" aria-controls="tab-status" aria-selected="true">Status</button>
+      <button type="button" class="tab" role="tab" id="tab-btn-contacts" aria-controls="tab-contacts" aria-selected="false">Trusted contacts</button>
+    </nav>
+
+    <main id="tab-status" role="tabpanel" aria-labelledby="tab-btn-status">
       <section id="status" class="status status-idle" aria-live="polite">
         <div class="light" aria-hidden="true">
           <svg class="bird" viewBox="0 0 24 24">
@@ -59,6 +64,74 @@
         </label>
       </section>
     </main>
+
+    <main id="tab-contacts" role="tabpanel" aria-labelledby="tab-btn-contacts" hidden>
+      <!-- Matches the Trusted Contacts card on canary.fishing -->
+      <section class="tc-card">
+        <div class="tc-head">
+          <p class="tc-title">Trusted Contacts</p>
+          <p class="tc-sub">People you can ask when an email looks wrong</p>
+        </div>
+
+        <ul id="contact-list" class="tc-list"></ul>
+        <p id="contact-empty" class="tc-empty">No trusted contacts yet.</p>
+
+        <div class="tc-foot">
+          <button type="button" id="add-open" class="btn-outline">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+            Add trusted contact
+          </button>
+
+          <form id="contact-form" class="tc-form" novalidate hidden>
+            <label class="field">
+              <span>Name</span>
+              <input id="contact-name" type="text" autocomplete="off" placeholder="Sarah" />
+            </label>
+            <label class="field">
+              <span>Relationship <em>(optional)</em></span>
+              <input id="contact-relation" type="text" autocomplete="off" placeholder="Daughter" />
+            </label>
+            <label class="field">
+              <span>Email</span>
+              <input id="contact-email" type="email" autocomplete="off" placeholder="sarah@example.com" />
+            </label>
+            <p id="contact-error" class="form-error" role="alert" hidden></p>
+            <div class="tc-form-actions">
+              <button type="submit" class="btn-primary">Save contact</button>
+              <button type="button" id="add-cancel" class="btn-ghost">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <p class="tc-note">
+        When Canary warns you about an email, press <strong>Inform my guardian</strong>, pick who to
+        ask, and Gmail opens a ready-to-send email. Nothing is sent until you press Send.
+      </p>
+    </main>
+
+    <template id="contact-template">
+      <li class="tc-row">
+        <button type="button" class="tc-main" aria-expanded="false">
+          <span class="tc-avatar" aria-hidden="true"></span>
+          <span class="tc-who">
+            <span class="tc-name"></span>
+            <span class="tc-rel"></span>
+          </span>
+        </button>
+        <button type="button" class="tc-switch" role="switch" aria-checked="true"><span class="tc-knob"></span></button>
+        <div class="tc-details" hidden>
+          <p class="tc-email"></p>
+          <p class="tc-label">Offer them for</p>
+          <label class="toggle"><input type="checkbox" class="contact-red" /><span>Red warnings (likely scams)</span></label>
+          <label class="toggle"><input type="checkbox" class="contact-yellow" /><span>Yellow warnings (be careful)</span></label>
+          <div class="tc-detail-actions">
+            <button type="button" class="btn-outline btn-small contact-test">Send a test email</button>
+            <button type="button" class="link-btn contact-remove">Remove</button>
+          </div>
+        </div>
+      </li>
+    </template>
 
     <script src="popup.js"></script>
   </body>

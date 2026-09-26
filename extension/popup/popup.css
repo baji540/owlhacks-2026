@@ -39,6 +39,7 @@
 body.big { --fs: 19px; }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 /* The popup is sized by its content: no fixed or minimum height anywhere,
    so Chrome shrinks the window to fit whatever is showing. */
@@ -192,3 +193,196 @@ main { padding: 16px; display: grid; gap: 12px; }
 }
 .toggle input:checked:hover { background-color: var(--teal-600); }
 .toggle input:focus-visible { outline: 2px solid var(--teal-300); outline-offset: 2px; }
+
+/* ---------- Tabs ---------- */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  flex: 1;
+  padding: 9px 8px 10px;
+  font: inherit;
+  font-size: 0.93em;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+.tab:hover { color: var(--text); }
+.tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--teal-500); }
+.tab:focus-visible { outline: 2px solid var(--teal-300); outline-offset: -2px; border-radius: 6px; }
+
+/* The header already has a bottom border; the tabs row replaces it */
+.top { border-bottom: 0; }
+
+/* ---------- Trusted contacts (styled like the card on canary.fishing) ---------- */
+
+.tc-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.45);
+}
+.tc-head { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.tc-title { margin: 0; font-weight: 600; }
+.tc-sub { margin: 2px 0 0; font-size: 0.875em; color: var(--text-muted); }
+
+.tc-list { list-style: none; margin: 0; padding: 0; }
+.tc-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  align-items: center;
+  column-gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.tc-row:last-child { border-bottom: 0; }
+
+.tc-main {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.tc-main:focus-visible { outline: 2px solid var(--teal-300); outline-offset: 3px; border-radius: 8px; }
+.tc-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 128, 128, 0.12);
+  color: var(--teal-300);
+  font-weight: 600;
+}
+.tc-who { display: flex; flex-direction: column; min-width: 0; }
+.tc-name, .tc-rel { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tc-name { font-weight: 600; }
+.tc-rel { font-size: 0.875em; color: var(--text-muted); }
+.tc-main:hover .tc-name { color: var(--teal-300); }
+
+/* On/off switch, same as the site */
+.tc-switch {
+  position: relative;
+  justify-self: end;
+  width: 52px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--border);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.tc-switch[aria-checked="true"] { background: var(--teal-500); }
+.tc-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+.tc-switch[aria-checked="true"] .tc-knob { transform: translateX(24px); }
+.tc-switch:focus-visible { outline: 2px solid var(--teal-300); outline-offset: 2px; }
+
+.tc-details {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+.tc-email { margin: 0; font-size: 0.9em; color: var(--text-muted); overflow-wrap: anywhere; }
+.tc-label { margin: 2px 0 0; font-size: 0.8em; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-muted); }
+.tc-detail-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+
+.tc-empty { margin: 0; padding: 16px; color: var(--text-muted); font-style: italic; }
+.tc-foot { padding: 14px 16px; border-top: 1px solid var(--border); }
+.tc-list:empty + .tc-empty + .tc-foot { border-top: 0; }
+.tc-form { display: grid; gap: 10px; }
+.tc-form-actions { display: flex; gap: 8px; }
+.tc-form-actions .btn-primary { flex: 1; }
+.tc-note { margin: 0; font-size: 0.875em; color: var(--text-muted); }
+.tc-note strong { color: var(--text); }
+
+.field { display: grid; gap: 4px; }
+.field span { font-size: 0.88em; font-weight: 600; color: var(--text-muted); }
+.field em { font-weight: 400; font-style: normal; opacity: 0.8; }
+.field input {
+  width: 100%;
+  padding: 9px 11px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.field input::placeholder { color: #5f7f89; }
+.field input:focus { outline: none; border-color: var(--teal-300); box-shadow: 0 0 0 2px rgba(109, 208, 198, 0.25); }
+.form-error { margin: 0; color: var(--danger); font-size: 0.9em; }
+
+/* Buttons (same variants as the site: primary, outline, ghost) */
+.btn-primary, .btn-outline, .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 0.9em;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.btn-primary { color: #fff; background: var(--teal-500); border: 1px solid transparent; }
+.btn-primary:hover { background: var(--teal-600); }
+.btn-outline { width: 100%; color: var(--text); background: transparent; border: 1px solid var(--border); }
+.btn-outline:hover { background: var(--bg-muted); }
+.btn-ghost { color: var(--text-muted); background: transparent; border: 1px solid transparent; }
+.btn-ghost:hover { background: var(--bg-muted); color: var(--text); }
+.btn-small { width: auto; height: 32px; padding: 0 12px; font-size: 0.85em; }
+.icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.link-btn {
+  padding: 2px 4px;
+  font: inherit;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-btn:hover { color: var(--danger); }
+.btn-primary:focus-visible, .btn-outline:focus-visible, .btn-ghost:focus-visible, .link-btn:focus-visible { outline: 2px solid var(--teal-300); outline-offset: 2px; }
+
+/* Opened as a full tab (from "Add a trusted contact" in Gmail): center the panel */
+body.in-tab {
+  margin: 40px auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+html:has(body.in-tab) { height: auto; min-height: 100%; }

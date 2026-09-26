@@ -83,6 +83,9 @@
       action.append(document.createTextNode(tidy(data.actionRecommendation)));
       body.append(action);
     }
+    if (score !== "green") {
+      body.append(buildGuardianButton(score, data));
+    }
 
     const close = el("button", "canary-banner-close", "Hide");
     close.type = "button";
@@ -98,6 +101,196 @@
     card.append(icon, body, close);
     shield(card);
     return card;
+  }
+
+  /* ------------------------------------------------------------------
+   * "Send to my guardian"
+   * Opens a Gmail message to the user's trusted contacts, already written.
+   * The user checks it and presses Gmail's own Send button, so nothing is
+   * ever sent without them. Contacts live in chrome.storage.sync, managed in
+   * the popup's "Trusted contacts" tab.
+   * ------------------------------------------------------------------ */
+
+  const CONTACTS_KEY = "trustedContacts";
+
+  async function loadContacts() {
+    try {
+      const saved = await chrome.storage.sync.get(CONTACTS_KEY);
+      return Array.isArray(saved[CONTACTS_KEY]) ? saved[CONTACTS_KEY] : [];
+    } catch {
+      return [];
+    }
+  }
+
+  const wantsLevel = (contact, score) => (score === "red" ? contact.red !== false : contact.yellow !== false);
+
+  // Who the flagged email says it is from, and its subject, read from what is on screen.
+  function emailContext() {
+    const anchor = openCard && openCard.anchor;
+    const row = anchor && anchor.closest ? anchor.closest("tr.zA") : null;
+    const scope = row || document.querySelector('div[role="main"]') || document;
+    const subjectEl = row ? row.querySelector(".bog") : scope.querySelector("h2.hP");
+    let subject = "";
+    if (subjectEl) {
+      const copy = subjectEl.cloneNode(true);
+      copy.querySelectorAll(".canary-badge").forEach((b) => b.remove());
+      subject = copy.textContent.replace(/\s+/g, " ").trim();
+    }
+    const senders = scope.querySelectorAll(row ? "span[email]" : "span.gD[email]");
+    const senderEl = senders[senders.length - 1];
+    let sender = "";
+    if (senderEl) {
+      const name = (senderEl.getAttribute("name") || senderEl.textContent || "").trim();
+      const email = (senderEl.getAttribute("email") || "").trim();
+      sender = name && email && name !== email ? `${name} <${email}>` : email || name;
+    }
+    return { subject, sender };
+  }
+
+  function composeUrl(to, subject, body) {
+    // Keep the user in the same Gmail account they are reading (…/mail/u/1/ etc.)
+    const account = (location.pathname.match(/\/mail\/u\/(\d+)/) || [])[1];
+    const base = `https://mail.google.com/mail/${account ? `u/${account}/` : ""}`;
+    const params = new URLSearchParams({ view: "cm", fs: "1", to, su: subject, body });
+    return `${base}?${params.toString()}`;
+  }
+
+  function guardianMessage(score, data, contacts) {
+    const { subject, sender } = emailContext();
+    const names = contacts.map((c) => c.name).filter(Boolean);
+    const greeting = !names.length
+      ? "Hi,"
+      : names.length === 1
+        ? `Hi ${names[0]},`
+        : `Hi ${names.slice(0, -1).join(", ")} and ${names[names.length - 1]},`;
+    const what = score === "red" ? "a likely scam" : "suspicious";
+    const lines = [
+      greeting,
+      "",
+      `Canary flagged an email I received as ${what}.`,
+      "",
+      sender ? `From: ${sender}` : null,
+      subject ? `Subject: ${subject}` : null,
+      data.threatLabel ? `Warning: ${tidy(data.threatLabel)}` : null,
+      data.simpleExplanation ? `Why: ${tidy(data.simpleExplanation)}` : null,
+      "",
+      "Can you check this with me before I do anything?",
+      "",
+      "Sent with Canary (canary.fishing)",
+    ].filter((line) => line !== null);
+    const subjectLine =
+      score === "red" ? "Canary alert: I got a likely scam email" : "Canary alert: I got a suspicious email";
+    return { subjectLine, body: lines.join("\n") };
+  }
+
+  function openContactsPage() {
+    window.open(chrome.runtime.getURL("popup/popup.html#contacts"), "_blank", "noopener");
+  }
+
+  const eligible = (all, score) =>
+    all.filter((c) => c.email && c.enabled !== false && wantsLevel(c, score));
+
+  function guardianRow(contact, checked) {
+    const row = el("label", "canary-guardian-row");
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.className = "canary-guardian-check";
+    box.value = contact.email;
+    box.checked = checked;
+    const avatar = el("span", "canary-guardian-avatar", (contact.name || contact.email).trim().charAt(0).toUpperCase());
+    avatar.setAttribute("aria-hidden", "true");
+    const who = el("span", "canary-guardian-who");
+    who.append(el("span", "canary-guardian-name", contact.name || contact.email));
+    who.append(el("span", "canary-guardian-rel", contact.relation || contact.email));
+    row.append(box, avatar, who);
+    return row;
+  }
+
+  function buildGuardianButton(score, data) {
+    const wrap = el("div", "canary-banner-guardian");
+    const button = el("button", "canary-banner-guardian-btn", "Inform my guardian");
+    button.type = "button";
+    button.setAttribute("aria-expanded", "false");
+    const hint = el("div", "canary-banner-guardian-hint", "Pick who to ask. Gmail opens an email you can check, then press Send.");
+    const picker = el("div", "canary-guardian-picker");
+    picker.hidden = true;
+    wrap.append(button, hint, picker);
+
+    let contacts = [];
+    loadContacts().then((all) => {
+      contacts = eligible(all, score);
+      if (!contacts.length) {
+        button.textContent = "Add a trusted contact";
+        hint.textContent = "Choose someone Canary can help you ask for a second opinion.";
+      }
+    });
+
+    function closePicker() {
+      picker.hidden = true;
+      picker.replaceChildren();
+      button.hidden = false;
+      hint.hidden = false;
+      button.setAttribute("aria-expanded", "false");
+      button.focus();
+    }
+
+    function openPicker() {
+      picker.replaceChildren();
+      picker.append(el("div", "canary-guardian-title", "Who should I ask?"));
+      const list = el("div", "canary-guardian-list");
+      contacts.forEach((contact, i) => list.append(guardianRow(contact, i === 0)));
+      picker.append(list);
+
+      const error = el("div", "canary-guardian-error");
+      error.hidden = true;
+      const actions = el("div", "canary-guardian-actions");
+      const send = el("button", "canary-guardian-send", "Write email");
+      send.type = "button";
+      const cancel = el("button", "canary-guardian-cancel", "Cancel");
+      cancel.type = "button";
+      actions.append(send, cancel);
+      picker.append(error, actions);
+
+      send.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const chosenEmails = Array.from(picker.querySelectorAll(".canary-guardian-check:checked")).map((b) => b.value);
+        const chosen = contacts.filter((c) => chosenEmails.includes(c.email));
+        if (!chosen.length) {
+          error.textContent = "Tick at least one person.";
+          error.hidden = false;
+          return;
+        }
+        const { subjectLine, body } = guardianMessage(score, data, chosen);
+        const url = composeUrl(chosen.map((c) => c.email).join(","), subjectLine, body);
+        window.open(url, "canary-guardian", "popup,width=720,height=680");
+        closePicker();
+      });
+      cancel.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closePicker();
+      });
+
+      button.hidden = true;
+      hint.hidden = true;
+      picker.hidden = false;
+      button.setAttribute("aria-expanded", "true");
+      const first = picker.querySelector(".canary-guardian-check");
+      if (first) first.focus();
+    }
+
+    button.addEventListener("click", async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      contacts = eligible(await loadContacts(), score);
+      if (!contacts.length) {
+        openContactsPage();
+        return;
+      }
+      openPicker();
+    });
+    return wrap;
   }
 
   function positionFloating(card, anchor) {
