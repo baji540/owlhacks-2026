@@ -1,8 +1,8 @@
 // extension/popup/popup.js (owner: Masnun)
-// Shows the result for the most recently scanned email.
-// Ari: after scoring an email, save it with
-//   chrome.storage.local.set({ lastScan: { score, simpleExplanation, actionRecommendation, subject } })
-// and this popup will display it.
+// Shows the result for the email that is open in Gmail right now.
+// content.js saves it as chrome.storage.local.lastScan
+//   { score, subject, threatLabel, simpleExplanation, actionRecommendation }
+// and sets it to null when you go back to the inbox.
 
 const TITLES = {
   green: "This email looks safe",
@@ -17,7 +17,14 @@ function showScan(scan) {
   const actionBox = document.getElementById("action-box");
   const actionText = document.getElementById("action-text");
 
-  if (!scan || !TITLES[scan.score]) return;
+  if (!scan || !TITLES[scan.score]) {
+    // No email open: back to the waiting state
+    status.className = "status status-idle";
+    title.textContent = "Open an email in Gmail";
+    text.textContent = "Canary checks each email you open and tells you if it's safe.";
+    actionBox.hidden = true;
+    return;
+  }
 
   status.className = `status status-${scan.score}`;
   title.textContent = TITLES[scan.score];
