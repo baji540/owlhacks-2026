@@ -21,8 +21,8 @@
     </style>
   </head>
   <body>
-    <h1>Canary UI preview — fake Gmail, real Canary styles</h1>
-    <p>Click the yellow or red bird to open the explanation, then click <b>Hide</b>.</p>
+    <h1>Canary UI preview: fake Gmail, real Canary styles</h1>
+    <p>The red email below opens its card automatically. Click any bird (green too) to open its card, then click <b>Hide</b>.</p>
 
     <table>
       <tbody>
@@ -52,7 +52,7 @@
         },
         red: {
           score: "red", threatLabel: "Pretends to be Chase",
-          simpleExplanation: "This is almost certainly a scam. It looks like it is from Chase, but it was sent from “chase-update.top”. A real Chase message always ends in “chase.com”.",
+          simpleExplanation: "This message is trying to scare you into acting fast — it uses wording like “account suspended”. It looks like it is from Chase, but it was sent from “chase-update.top”. A real Chase message always ends in “chase.com”.",
           actionRecommendation: "Do not click anything in this email and do not type your password anywhere it sends you.",
         },
       };
@@ -61,6 +61,7 @@
       function buildBadge(verdict) {
         const el = document.createElement("span");
         el.className = `canary-badge canary-${verdict.score}`;
+        el.dataset.canaryBadge = verdict.score;
         el.textContent = TEXT[verdict.score];
         el.setAttribute("aria-label", TEXT[verdict.score]);
         if (verdict.score === "green") { el.setAttribute("role", "img"); return el; }

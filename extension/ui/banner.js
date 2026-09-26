@@ -1,4 +1,4 @@
-// extension/ui/banner.js — owner: Masnun
+// extension/ui/banner.js (owner: Masnun)
 // Renders the Canary explanation card inside Gmail.
 //
 // Called by Ari's content.js when a badge is clicked:
@@ -25,10 +25,18 @@
 
   let openCard = null; // { card, anchor, cleanup }
 
+  // Plain, human punctuation: turn "fast — it uses" into "fast, it uses".
+  function tidy(text) {
+    return String(text || "")
+      .replace(/\s*—\s*/g, ", ")
+      .replace(/\s+–\s+/g, ", ")
+      .replace(/,\s*,/g, ",");
+  }
+
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
-    if (text) node.textContent = text;
+    if (text) node.textContent = tidy(text);
     return node;
   }
 
@@ -72,7 +80,7 @@
     if (data.actionRecommendation && score !== "green") {
       const action = el("p", "canary-banner-action");
       action.append(el("strong", null, "What to do: "));
-      action.append(document.createTextNode(data.actionRecommendation));
+      action.append(document.createTextNode(tidy(data.actionRecommendation)));
       body.append(action);
     }
 
@@ -176,6 +184,95 @@
     openCard = { card, anchor: target, cleanup };
     return card;
   }
+
+
+  /* ------------------------------------------------------------------
+   * 1. Yellow and red open by themselves when you open that email.
+   *    We "click" Ari's badge for the reader, so his code hands us the full verdict.
+   *    Each email pops up once per page load; after Hide it stays hidden.
+   * 2. Green birds are clickable too. Ari's green badge has no click handler,
+   *    so we build a short "looks safe" card from what is on screen.
+   * 3. Badge tooltips get the same punctuation clean-up as the card.
+   * ------------------------------------------------------------------ */
+
+  const autoOpened = new Set();
+
+  function emailKey(badge) {
+    const subject = badge.closest("h2.hP");
+    return subject ? tidy(subject.textContent) + "|" + (badge.dataset.canaryBadge || "") : null;
+  }
+
+  function senderDomain(badge) {
+    const scope = badge.closest("tr.zA") || document.querySelector('div[role="main"]') || document;
+    const holder = scope.querySelector("span.gD[email], span[email]");
+    const email = holder ? holder.getAttribute("email") || "" : "";
+    return email.includes("@") ? email.split("@").pop().toLowerCase() : "";
+  }
+
+  function openGreen(badge) {
+    const domain = senderDomain(badge);
+    renderWarningBanner(badge, {
+      score: "green",
+      simpleExplanation:
+        "Canary checked who sent this" + (domain ? " (" + domain + ")" : "") +
+        ", the wording, and every link, and found nothing dangerous.",
+    });
+  }
+
+  const isGreenBadge = (node) =>
+    node && node.closest && node.closest(".canary-badge.canary-green");
+
+  // Capture phase on window runs before Gmail's own handlers, so clicking a green
+  // bird in the inbox list shows the card instead of opening the email.
+  ["mousedown", "pointerdown", "mouseup"].forEach((type) =>
+    window.addEventListener(type, (event) => {
+      if (isGreenBadge(event.target)) event.stopPropagation();
+    }, true)
+  );
+  window.addEventListener("click", (event) => {
+    const badge = isGreenBadge(event.target);
+    if (!badge) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openGreen(badge);
+  }, true);
+  window.addEventListener("keydown", (event) => {
+    const badge = isGreenBadge(event.target);
+    if (!badge || (event.key !== "Enter" && event.key !== " ")) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openGreen(badge);
+  }, true);
+
+  function tidyBadges() {
+    document.querySelectorAll(".canary-badge").forEach((badge) => {
+      if (badge.title && /[–—]/.test(badge.title)) badge.title = tidy(badge.title);
+      if (badge.classList.contains("canary-green") && badge.tabIndex !== 0) {
+        badge.tabIndex = 0;
+        badge.setAttribute("role", "button");
+        badge.setAttribute("aria-label", "Safe. Show why Canary thinks this email is safe.");
+      }
+    });
+
+    const flagged = document.querySelector(
+      "h2.hP .canary-badge.canary-red, h2.hP .canary-badge.canary-yellow"
+    );
+    if (!flagged) return;
+    const key = emailKey(flagged);
+    if (!key || autoOpened.has(key)) return;
+    autoOpened.add(key);
+    if (!(openCard && openCard.anchor === flagged)) flagged.click();
+  }
+
+  let pending = false;
+  new MutationObserver(() => {
+    if (pending) return;
+    pending = true;
+    setTimeout(() => {
+      pending = false;
+      tidyBadges();
+    }, 150);
+  }).observe(document.documentElement, { childList: true, subtree: true });
 
   window.renderWarningBanner = renderWarningBanner;
 })();
