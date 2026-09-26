@@ -126,6 +126,8 @@ rejected with `BAD_PAYLOAD`.
     "riskPoints": 100,            // 0-100, debugging only — never show this to a user
     "confidence": "high",         // "low" | "medium" | "high"
     "paused": false,              // present and true when the user switched shields off
+    "senderTrusted": false,       // sending domain is on the reputable-domain whitelist
+    "trustSuppressed": false,     // true when the whitelist downgraded a warning to green
     "threatCategory": "brand_impersonation",       // the single worst finding
     "threatLabel": "Pretends to be Chase",         // short human label for that finding
     "threatCategories": ["urgency_pressure", "brand_impersonation", "malicious_link"],
@@ -174,6 +176,21 @@ Everything else is optional for renderers.
 
 The engine caches by `fingerprint`, so repeat requests for the same email are free
 and always return the identical verdict.
+
+#### Reputable senders
+
+Mail whose *sending domain* is on the engine's `REPUTABLE_DOMAINS` whitelist (or a
+subdomain of one, such as `mailer.netflix.com`) is treated as genuine: ordinary
+sales pressure is ignored and the verdict is forced to `green`, with
+`senderTrusted: true` and `trustSuppressed: true` when a warning was downgraded.
+
+Four findings survive the whitelist, because no genuine sender produces them —
+a bare-IP sender or link, a link whose scheme runs code instead of opening a page
+(`javascript:`, `data:text/html`, …), and a link disguised with an `@` trick.
+Those keep their `red` rating no matter who the mail claims to be from.
+
+When `trustSuppressed` is true, `reasons` still lists what was noticed but
+`threatCategory` is `none` — render the badge from `score`, never from `reasons`.
 
 ### Unsolicited variant
 
