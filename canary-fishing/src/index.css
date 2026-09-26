@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+/*
+  Design tokens for Canary Fishing — dark teal/navy visual identity.
+  Every color/radius/shadow/font token below becomes a Tailwind utility
+  automatically (e.g. --color-canary-500 -> bg-canary-500, text-canary-500).
+  Use these tokens instead of arbitrary values so future sections stay consistent.
+*/
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* Primary brand accent: canary yellow (unchanged — reads equally well on dark) */
+  --color-canary-50: #fffdf2;
+  --color-canary-100: #fff8d6;
+  --color-canary-200: #ffeea8;
+  --color-canary-300: #ffe070;
+  --color-canary-400: #ffcf3d;
+  --color-canary-500: #f7c948;
+  --color-canary-600: #e0ac1f;
+  --color-canary-700: #b3860f;
+  /* Solid warm-dark panel bg for canary-branded callouts (an alpha blend of
+     canary-400 over the teal card would read olive-green, not gold). */
+  --color-canary-bg: #332b10;
+
+  /* Ink scale: dark text/icons used on top of BRIGHT surfaces (canary badges,
+     buttons) — independent of the page theme, so left dark in both modes. */
+  --color-navy-900: #10182a;
+  --color-navy-800: #1a2436;
+  --color-navy-700: #283449;
+  --color-navy-600: #3c4a63;
+  --color-navy-500: #59677f;
+  --color-navy-400: #7c8aa0;
+
+  /* Secondary accent: blue-teal, tuned for legibility on dark surfaces */
+  --color-teal-200: #a8e6df;
+  --color-teal-300: #6dd0c6;
+  --color-teal-400: #4fc3bb;
+  --color-teal-500: #1ea39a;
+  --color-teal-600: #167f79;
+  --color-teal-700: #0f6460;
+
+  /* Surfaces: deep dark teal-navy page, lighter teal-blue elevated cards */
+  --color-bg: #071b20;
+  --color-bg-muted: #0b242a;
+  --color-card: #123540;
+  --color-border: #24515d;
+
+  /* Semantic text: off-white primary, muted blue-gray secondary */
+  --color-text: #f3f7f8;
+  --color-text-muted: #93aeb8;
+
+  /* Status colors — brightened for contrast against dark surfaces */
+  --color-success: #34d399;
+  --color-success-bg: #113828;
+  --color-warning: #fb923c;
+  --color-warning-bg: #3a2412;
+  --color-danger: #f87171;
+  --color-danger-bg: #3a1414;
+
+  /* Radius scale: inputs -> buttons -> cards -> large containers */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* Neutral black shadows read as depth on dark surfaces without any glow */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 16px 40px -8px rgba(0, 0, 0, 0.45);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-feature-settings: 'liga' 1, 'kern' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  img,
+  picture,
+  svg,
+  video {
+    max-width: 100%;
+    display: block;
+  }
+
+  a {
+    color: var(--color-teal-300);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* Accessible focus indicator: visible on keyboard nav, silent on mouse/touch */
+  :focus {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-teal-300);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  ::selection {
+    background-color: var(--color-canary-300);
+    color: var(--color-navy-900);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/*
+  Typography hierarchy. Use these classes on the relevant semantic
+  element (h1, h2, p, etc.) rather than picking one-off font sizes.
+*/
+@layer components {
+  .text-display {
+    font-size: clamp(2.5rem, 2rem + 2.5vw, 4rem);
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--color-text);
+  }
+
+  .text-h2 {
+    font-size: clamp(1.75rem, 1.5rem + 1.2vw, 2.5rem);
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--color-text);
+  }
+
+  .text-h3 {
+    font-size: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+    line-height: 1.3;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .text-subheading {
+    font-size: clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem);
+    line-height: 1.5;
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+
+  .text-body {
+    font-size: 1rem;
+    line-height: 1.65;
+    font-weight: 400;
+    color: var(--color-text);
+  }
+
+  .text-small {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    font-weight: 400;
+    color: var(--color-text-muted);
+  }
+
+  .text-label {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+}
