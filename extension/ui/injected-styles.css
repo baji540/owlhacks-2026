@@ -1,0 +1,101 @@
+/* extension/ui/injected-styles.css — owner: Masnun
+   Styles for the banner injected into Gmail. Everything is prefixed
+   "canary-" so it never clashes with Gmail's own CSS.
+   Designed for older readers: large text, high contrast, not colour-only. */
+
+.canary-banner {
+  all: initial; /* shield from Gmail styles */
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 12px 0 16px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  border: 3px solid;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+  color: #111;
+  animation: canary-in 0.25s ease-out;
+}
+
+.canary-banner * {
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.canary-green  { background: #e9f7ee; border-color: #1e7b3c; }
+.canary-yellow { background: #fff6d6; border-color: #a86b00; }
+.canary-red    { background: #fdeaea; border-color: #b3261e; }
+
+.canary-icon {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+}
+.canary-green  .canary-icon { background: #1e7b3c; }
+.canary-yellow .canary-icon { background: #a86b00; }
+.canary-red    .canary-icon { background: #b3261e; }
+
+.canary-body { flex: 1; min-width: 0; }
+
+.canary-tag {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #444;
+}
+
+.canary-title {
+  margin: 2px 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: #111;
+}
+.canary-red .canary-title { color: #8c1d18; }
+
+.canary-explain,
+.canary-action {
+  margin: 0 0 6px;
+  font-size: 18px;
+  color: #111;
+}
+
+.canary-action {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.canary-close {
+  flex: none;
+  cursor: pointer;
+  padding: 8px 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+  background: #fff;
+  border: 2px solid #555;
+  border-radius: 8px;
+}
+.canary-close:hover { background: #f0f0f0; }
+.canary-close:focus-visible { outline: 3px solid #1a56db; outline-offset: 2px; }
+
+@keyframes canary-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .canary-banner { animation: none; }
+}

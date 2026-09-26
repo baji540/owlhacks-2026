@@ -1,0 +1,87 @@
+:root {
+  --ink: #111;
+  --muted: #444;
+  --bg: #fff;
+  --line: #d6d6d6;
+  --green: #1e7b3c;
+  --yellow: #a86b00;
+  --red: #b3261e;
+  --blue: #1a56db;
+  --fs: 16px;
+}
+body.big { --fs: 20px; }
+
+* { box-sizing: border-box; }
+body {
+  width: 360px;
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: var(--fs);
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #0f1d5c;
+  color: #fff;
+}
+.logo { font-size: 32px; }
+h1 { margin: 0; font-size: 1.35em; }
+.sub { margin: 0; font-size: 0.85em; opacity: 0.85; }
+
+main { padding: 16px; display: grid; gap: 14px; }
+
+.status {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: 12px;
+  border: 3px solid var(--line);
+}
+.status h2 { margin: 0 0 4px; font-size: 1.2em; }
+.status p { margin: 0; }
+.light {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #bbb;
+}
+.status-green  { border-color: var(--green);  background: #e9f7ee; }
+.status-yellow { border-color: var(--yellow); background: #fff6d6; }
+.status-red    { border-color: var(--red);    background: #fdeaea; }
+.status-green  .light { background: var(--green); }
+.status-yellow .light { background: var(--yellow); }
+.status-red    .light { background: var(--red); }
+
+.action {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f3f3f3;
+}
+
+.legend { display: grid; gap: 6px; font-size: 0.95em; }
+.dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: -1px;
+}
+.dot.green { background: var(--green); }
+.dot.yellow { background: var(--yellow); }
+.dot.red { background: var(--red); }
+
+.settings { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.toggle input { width: 22px; height: 22px; accent-color: var(--blue); }
+
+footer { padding: 10px 16px 14px; text-align: center; font-size: 0.85em; }
+footer a { color: var(--blue); }

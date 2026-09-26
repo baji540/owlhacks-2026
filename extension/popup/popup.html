@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Canary</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="logo" aria-hidden="true">🐤</div>
+      <div>
+        <h1>Canary</h1>
+        <p class="sub">Your email safety helper</p>
+      </div>
+    </header>
+
+    <main>
+      <section id="status" class="status status-idle" aria-live="polite">
+        <div class="light" aria-hidden="true"></div>
+        <div>
+          <h2 id="status-title">Open an email in Gmail</h2>
+          <p id="status-text">Canary checks each email you open and tells you if it's safe.</p>
+        </div>
+      </section>
+
+      <section id="action-box" class="action" hidden>
+        <strong>What to do:</strong>
+        <span id="action-text"></span>
+      </section>
+
+      <section class="legend" aria-label="What the colours mean">
+        <div><span class="dot green"></span><b>Green</b> — looks safe</div>
+        <div><span class="dot yellow"></span><b>Yellow</b> — be careful</div>
+        <div><span class="dot red"></span><b>Red</b> — likely a scam</div>
+      </section>
+
+      <section class="settings">
+        <label class="toggle">
+          <input type="checkbox" id="enabled" checked />
+          <span>Check my emails</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="bigtext" />
+          <span>Extra-large text</span>
+        </label>
+      </section>
+    </main>
+
+    <footer><a href="https://canary.fishing" target="_blank" rel="noopener">canary.fishing</a></footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
