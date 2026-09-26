@@ -110,36 +110,40 @@ export function TrustedContacts() {
                   return (
                     <li
                       key={contact.name}
-                      className="flex items-center justify-between gap-3 px-5 py-4"
+                      className="grid grid-cols-[40px_minmax(0,1fr)_52px] items-center gap-3 px-5 py-4"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-500/10 font-semibold text-teal-300">
-                          {contact.initials}
-                        </span>
-                        <div>
-                          <p className="font-semibold text-text">{contact.name}</p>
-                          <p className="text-small text-text-muted">{contact.relation}</p>
-                        </div>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-500/10 font-semibold text-teal-300">
+                        {contact.initials}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-text">{contact.name}</p>
+                        <p className="truncate text-small text-text-muted">
+                          {contact.relation}
+                        </p>
                       </div>
 
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={isOn}
-                        aria-label={`Notify ${contact.name} for high-risk alerts`}
-                        onClick={() => setNotify((prev) => ({ ...prev, [contact.name]: !isOn }))}
-                        className={cn(
-                          'relative h-6 w-11 shrink-0 rounded-full transition-colors',
-                          isOn ? 'bg-teal-500' : 'bg-border',
-                        )}
-                      >
-                        <span
+                      <div className="flex items-center justify-end">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={isOn}
+                          aria-label={`Notify ${contact.name} for high-risk alerts`}
+                          onClick={() =>
+                            setNotify((prev) => ({ ...prev, [contact.name]: !isOn }))
+                          }
                           className={cn(
-                            'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
-                            isOn ? 'translate-x-[22px]' : 'translate-x-0.5',
+                            'relative h-[28px] w-[52px] shrink-0 rounded-full transition-colors',
+                            isOn ? 'bg-teal-500' : 'bg-border',
                           )}
-                        />
-                      </button>
+                        >
+                          <span
+                            className={cn(
+                              'absolute top-[2px] left-[2px] h-6 w-6 rounded-full bg-white shadow-sm transition-transform',
+                              isOn ? 'translate-x-[24px]' : 'translate-x-0',
+                            )}
+                          />
+                        </button>
+                      </div>
                     </li>
                   )
                 })}

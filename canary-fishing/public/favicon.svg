@@ -1,11 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#008080" />
-  <line
-    x1="6" y1="27" x2="24" y2="8"
-    stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.85"
-  />
-  <circle cx="24" cy="8" r="1.6" fill="#ffffff" />
-  <ellipse cx="14" cy="19" rx="7" ry="5.5" fill="#ffffff" />
-  <polygon points="20,17 26,15 21,20" fill="#ffffff" />
-  <polygon points="11,20 16,16 13,24" fill="#008080" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+  <rect width="36" height="36" rx="8" fill="#008080" />
+  <polygon points="1.29,35.85 33.08,24.24 32.92,23.76 0.71,34.15" fill="#ffffff" opacity="0.85" />
+  <path d="M33 24 Q36 25.5 34.5 29" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="round" opacity="0.6" />
+  <circle cx="34.5" cy="29" r="1" fill="#ffffff" opacity="0.6" />
+  <g transform="translate(2.16,2.88) scale(1.17)" stroke="#ffffff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 7h.01" />
+    <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
+    <path d="m20 7 2 .5-2 .5" />
+    <path d="M10 18v3" />
+    <path d="M14 17.75V21" />
+    <path d="M7 18a6 6 0 0 0 3.84-10.61" />
+  </g>
 </svg>

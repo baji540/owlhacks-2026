@@ -3,7 +3,7 @@
 /*
   Design tokens for Canary Fishing — dark teal/navy visual identity.
   Every color/radius/shadow/font token below becomes a Tailwind utility
-  automatically (e.g. --color-canary-500 -> bg-canary-500, text-canary-500).
+  automatically (e.g. --color-teal-500 -> bg-teal-500, text-teal-500).
   Use these tokens instead of arbitrary values so future sections stay consistent.
 */
 @theme {

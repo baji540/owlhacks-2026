@@ -6,8 +6,11 @@ interface BrandMarkProps {
 }
 
 /**
- * The Canary Fishing logo mark: a canary perched on a minimal fishing rod,
- * inside a solid teal badge. Shared by the navbar and footer.
+ * The Canary Fishing logo mark: the Lucide `Bird` icon, enlarged and
+ * positioned so it clearly reads as sitting on a thin tapered fishing rod,
+ * inside a solid teal badge. The rod is confined to the open space below the
+ * bird's feet so it never shows through the icon's unfilled interior.
+ * Shared by the navbar and footer.
  */
 export function BrandMark({ className }: BrandMarkProps) {
   return (
@@ -18,28 +21,28 @@ export function BrandMark({ className }: BrandMarkProps) {
     >
       <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-teal-500">
         <svg viewBox="0 0 36 36" className="absolute inset-0 h-full w-full" aria-hidden="true">
-          <line
-            x1="5"
-            y1="31"
-            x2="26"
-            y2="9"
-            stroke="#ffffff"
-            strokeWidth="2.25"
-            strokeLinecap="round"
+          {/* Fishing rod: thin tapered pole confined to the open space below the
+              bird's feet, with a trailing line + hook past the tip */}
+          <polygon
+            points="1.29,35.85 33.08,24.24 32.92,23.76 0.71,34.15"
+            fill="#ffffff"
+            opacity="0.85"
           />
           <path
-            d="M24 11 Q27 16 24 21"
+            d="M33 24 Q36 25.5 34.5 29"
             fill="none"
             stroke="#ffffff"
-            strokeWidth="1.4"
+            strokeWidth="1"
             strokeLinecap="round"
+            opacity="0.6"
           />
-          <circle cx="24" cy="21" r="1.3" fill="#ffffff" />
+          <circle cx="34.5" cy="29" r="1" fill="#ffffff" opacity="0.6" />
         </svg>
+
         <Bird
-          className="relative h-4 w-4 shrink-0 text-white"
-          style={{ transform: 'translate(2px, -9px)' }}
-          strokeWidth={2.4}
+          className="absolute text-white"
+          style={{ top: '8%', left: '6%', width: '78%', height: '78%' }}
+          strokeWidth={2}
           aria-hidden="true"
         />
       </span>
