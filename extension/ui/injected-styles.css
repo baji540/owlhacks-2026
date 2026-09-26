@@ -1,4 +1,4 @@
-/* extension/ui/injected-styles.css — owner: Masnun
+/* extension/ui/injected-styles.css (owner: Masnun)
    Styles injected into Gmail. Everything is prefixed "canary-" so it never clashes
    with Gmail's CSS. Built for older readers: large text in the card, high contrast,
    and meaning never carried by colour alone (every badge has an aria-label and
@@ -15,7 +15,7 @@
 }
 
 /* ================================================================
-   Badge — tiny coloured canary next to each subject.
+   Badge: tiny coloured canary next to each subject.
    Ari's content.js creates <span class="canary-badge canary-{score}">🔴 Scam Alert</span>;
    we hide that text visually (screen readers still get the aria-label)
    and draw the bird in its place.
@@ -55,12 +55,10 @@
 .canary-badge.canary-yellow { --ink: var(--canary-yellow); --tint: var(--canary-yellow-tint); }
 .canary-badge.canary-red    { --ink: var(--canary-red);    --tint: var(--canary-red-tint); }
 
-/* Yellow and red are clickable (they open the explanation card) */
-.canary-badge.canary-yellow,
-.canary-badge.canary-red { cursor: pointer; }
+/* Every bird is clickable and opens the explanation card */
+.canary-badge { cursor: pointer !important; }
 .canary-badge.canary-red { box-shadow: 0 0 0 1.5px var(--canary-red); }
-.canary-badge.canary-yellow:hover,
-.canary-badge.canary-red:hover { transform: scale(1.15); }
+.canary-badge:hover { transform: scale(1.15); }
 .canary-badge:focus-visible { outline: 2px solid #1a56db; outline-offset: 2px; }
 
 /* Slightly larger inside an opened email's subject line */
@@ -186,7 +184,7 @@ h2.hP .canary-badge {
 .canary-banner-close:hover { background: #f0f0f0; }
 .canary-banner-close:focus-visible { outline: 3px solid #1a56db; outline-offset: 2px; }
 
-/* Floating card (inbox list): compact, Hide pinned top-right so the text gets full width */
+/* Floating card (inbox list): compact. Hide pinned top-right so the text gets full width */
 .canary-banner-floating .canary-banner-icon { width: 32px; height: 32px; }
 .canary-banner-floating .canary-banner-icon::before { inset: 6px; }
 .canary-banner-floating .canary-banner-body { padding-right: 64px; }

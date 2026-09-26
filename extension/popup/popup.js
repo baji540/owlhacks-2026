@@ -1,4 +1,4 @@
-// extension/popup/popup.js — owner: Masnun
+// extension/popup/popup.js (owner: Masnun)
 // Shows the result for the most recently scanned email.
 // Ari: after scoring an email, save it with
 //   chrome.storage.local.set({ lastScan: { score, simpleExplanation, actionRecommendation, subject } })
@@ -22,7 +22,7 @@ function showScan(scan) {
   status.className = `status status-${scan.score}`;
   title.textContent = TITLES[scan.score];
   text.textContent = scan.subject
-    ? `"${scan.subject}" — ${scan.simpleExplanation || ""}`
+    ? `"${scan.subject}": ${scan.simpleExplanation || ""}`
     : scan.simpleExplanation || "";
 
   if (scan.actionRecommendation && scan.score !== "green") {
