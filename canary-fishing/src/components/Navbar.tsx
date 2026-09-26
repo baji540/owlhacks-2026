@@ -47,7 +47,7 @@ export function Navbar() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-body font-medium text-text-muted transition-colors hover:text-canary-400"
+                className="text-body font-medium text-text-muted transition-colors hover:text-teal-300"
               >
                 {link.label}
               </a>
@@ -94,7 +94,7 @@ export function Navbar() {
                   <a
                     key={link.href}
                     href={link.href}
-                    className="rounded-md px-3 py-3 text-body font-medium text-text-muted hover:bg-bg-muted hover:text-canary-400"
+                    className="rounded-md px-3 py-3 text-body font-medium text-text-muted hover:bg-bg-muted hover:text-teal-300"
                     onClick={handleMobileNavLinkClick}
                   >
                     {link.label}

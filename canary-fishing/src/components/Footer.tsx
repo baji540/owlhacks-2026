@@ -1,3 +1,4 @@
+import { Code } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { Container } from './ui/Container'
 import { NAV_LINKS } from '../lib/navLinks'
@@ -19,11 +20,20 @@ export function Footer() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-body font-medium text-text-muted hover:text-canary-400"
+                className="text-body font-medium text-text-muted hover:text-teal-300"
               >
                 {link.label}
               </a>
             ))}
+            <a
+              href="https://github.com/baji540/owlhacks-2026"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-body font-medium text-text-muted hover:text-teal-300"
+            >
+              <Code className="h-4 w-4" aria-hidden="true" />
+              GitHub
+            </a>
           </nav>
         </div>
 

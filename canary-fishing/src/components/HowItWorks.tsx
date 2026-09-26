@@ -42,7 +42,8 @@ export function HowItWorks() {
     <Section id="how-it-works">
       <Container>
         <div className="max-w-2xl">
-          <h2 className="text-h2">Three simple steps between you and a scam.</h2>
+          <p className="text-label text-teal-300">The process</p>
+          <h2 className="text-h2 mt-3">Three simple steps between you and a scam.</h2>
         </div>
 
         <div className="mt-14 flex flex-col gap-10 md:flex-row md:items-start md:gap-6">
@@ -56,7 +57,7 @@ export function HowItWorks() {
                 transition={{ duration: 0.4, delay: index * 0.1, ease: 'easeOut' }}
               >
                 <div className="flex items-center gap-4">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-canary-400 text-base font-bold text-navy-900">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-500 text-base font-bold text-white">
                     {step.number}
                   </span>
                   <step.icon className="h-6 w-6 text-teal-300" aria-hidden="true" />

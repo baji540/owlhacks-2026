@@ -56,11 +56,11 @@ function EmailPreview() {
         initial={shouldReduceMotion ? undefined : { opacity: 0, y: 12, scale: 0.96 }}
         animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.5, ease: 'easeOut' }}
-        className="relative z-10 ml-auto -mt-6 mr-4 max-w-xs rounded-lg border border-canary-400/40 bg-canary-bg p-4 shadow-md sm:mr-8"
+        className="relative z-10 ml-auto -mt-6 mr-4 max-w-xs rounded-lg border border-teal-400/40 bg-teal-bg p-4 shadow-md sm:mr-8"
       >
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-canary-400">
-            <ShieldAlert className="h-4 w-4 text-navy-900" aria-hidden="true" />
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-500">
+            <ShieldAlert className="h-4 w-4 text-white" aria-hidden="true" />
           </span>
           <p className="text-body font-semibold text-text">Potential phishing attempt</p>
         </div>

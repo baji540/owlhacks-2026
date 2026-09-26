@@ -1,11 +1,10 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { cn } from '../../lib/cn'
 
-export type BadgeVariant = 'neutral' | 'canary' | 'success' | 'warning' | 'danger' | 'info'
+export type BadgeVariant = 'neutral' | 'success' | 'warning' | 'danger' | 'info'
 
 const variantClasses: Record<BadgeVariant, string> = {
   neutral: 'bg-bg-muted text-text-muted border-border',
-  canary: 'bg-canary-100 text-canary-700 border-canary-300',
   success: 'bg-success-bg text-success border-success/20',
   warning: 'bg-warning-bg text-warning border-warning/20',
   danger: 'bg-danger-bg text-danger border-danger/20',

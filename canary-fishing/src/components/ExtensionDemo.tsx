@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   ChevronDown,
@@ -7,6 +7,8 @@ import {
   FileArchive,
   FileText,
   Link2Off,
+  Loader2,
+  Lock,
   ShieldAlert,
 } from 'lucide-react'
 import { Container } from './ui/Container'
@@ -15,6 +17,7 @@ import { Badge, type BadgeVariant } from './ui/Badge'
 import { cn } from '../lib/cn'
 
 type DemoMode = 'email' | 'file'
+type ScanPhase = 'checking' | 'analyzing' | 'done'
 
 interface DemoMessage {
   id: string
@@ -144,30 +147,81 @@ function FileIcon({ name }: { name: string }) {
   return <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
 }
 
+function ScanStatus({ label, reduceMotion }: { label: string; reduceMotion: boolean }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-center gap-2 text-small text-text-muted"
+    >
+      <Loader2
+        className={cn('h-4 w-4 shrink-0 text-teal-300', !reduceMotion && 'animate-spin')}
+        aria-hidden="true"
+      />
+      {label}
+    </div>
+  )
+}
+
 export function ExtensionDemo() {
   const shouldReduceMotion = useReducedMotion()
   const [mode, setMode] = useState<DemoMode>('email')
   const [selectedMessageId, setSelectedMessageId] = useState<string>('bank-alert')
   const [selectedFileId, setSelectedFileId] = useState<string>('invoice')
   const [showExplanation, setShowExplanation] = useState(false)
+  const [phase, setPhase] = useState<ScanPhase>('done')
+  const timeoutsRef = useRef<number[]>([])
+
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((id) => window.clearTimeout(id))
+    }
+  }, [])
 
   const selectedMessage =
     MESSAGES.find((message) => message.id === selectedMessageId) ?? MESSAGES[0]
   const selectedFile = FILES.find((file) => file.id === selectedFileId) ?? FILES[0]
 
+  const scanLabel =
+    phase === 'checking'
+      ? mode === 'email'
+        ? 'Scanning message…'
+        : 'Checking file…'
+      : mode === 'email'
+        ? 'Analyzing sender & links…'
+        : 'Analyzing file…'
+
+  function runScanSequence() {
+    timeoutsRef.current.forEach((id) => window.clearTimeout(id))
+    timeoutsRef.current = []
+
+    if (shouldReduceMotion) {
+      setPhase('done')
+      return
+    }
+
+    setPhase('checking')
+    const t1 = window.setTimeout(() => setPhase('analyzing'), 500)
+    const t2 = window.setTimeout(() => setPhase('done'), 1050)
+    timeoutsRef.current = [t1, t2]
+  }
+
   function selectMode(next: DemoMode) {
     setMode(next)
     setShowExplanation(false)
+    runScanSequence()
   }
 
   function selectMessage(id: string) {
     setSelectedMessageId(id)
     setShowExplanation(false)
+    runScanSequence()
   }
 
   function selectFile(id: string) {
     setSelectedFileId(id)
     setShowExplanation(false)
+    runScanSequence()
   }
 
   return (
@@ -193,7 +247,7 @@ export function ExtensionDemo() {
             onClick={() => selectMode('email')}
             className={cn(
               'rounded px-4 py-2 text-small font-semibold transition-colors',
-              mode === 'email' ? 'bg-canary-400 text-navy-900' : 'text-text-muted hover:text-text',
+              mode === 'email' ? 'bg-teal-500 text-white' : 'text-text-muted hover:text-text',
             )}
           >
             Suspicious Email
@@ -205,7 +259,7 @@ export function ExtensionDemo() {
             onClick={() => selectMode('file')}
             className={cn(
               'rounded px-4 py-2 text-small font-semibold transition-colors',
-              mode === 'file' ? 'bg-canary-400 text-navy-900' : 'text-text-muted hover:text-text',
+              mode === 'file' ? 'bg-teal-500 text-white' : 'text-text-muted hover:text-text',
             )}
           >
             Downloaded File
@@ -213,11 +267,23 @@ export function ExtensionDemo() {
         </div>
 
         <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-bg-muted px-4 py-3">
-            <div className="flex gap-1.5" aria-hidden="true">
-              <span className="h-2.5 w-2.5 rounded-full bg-border" />
-              <span className="h-2.5 w-2.5 rounded-full bg-border" />
-              <span className="h-2.5 w-2.5 rounded-full bg-border" />
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-bg-muted px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1.5" aria-hidden="true">
+                <span className="h-2.5 w-2.5 rounded-full bg-border" />
+                <span className="h-2.5 w-2.5 rounded-full bg-border" />
+                <span className="h-2.5 w-2.5 rounded-full bg-border" />
+              </div>
+              <div className="hidden items-center gap-2 rounded-md border border-border bg-card px-3 py-1 text-small text-text-muted sm:flex">
+                <Lock className="h-3 w-3 shrink-0" aria-hidden="true" />
+                <span>{mode === 'email' ? 'mail.example.com' : 'downloads.example.com'}</span>
+                <span
+                  className="ml-1 flex h-4 w-4 shrink-0 items-center justify-center rounded bg-teal-500 text-[10px] font-bold text-white"
+                  aria-hidden="true"
+                >
+                  C
+                </span>
+              </div>
             </div>
             <Badge variant="neutral">Product preview — illustrative demo</Badge>
           </div>
@@ -235,7 +301,7 @@ export function ExtensionDemo() {
                         onClick={() => selectMessage(message.id)}
                         className={cn(
                           'flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition-colors',
-                          isSelected ? 'bg-canary-bg' : 'hover:bg-bg-muted',
+                          isSelected ? 'bg-teal-bg' : 'hover:bg-bg-muted',
                         )}
                       >
                         <div className="flex w-full items-center justify-between gap-2">
@@ -290,19 +356,41 @@ export function ExtensionDemo() {
                     <p className="text-body mt-2 text-text-muted">{selectedMessage.body}</p>
 
                     {selectedMessage.suspiciousLink && (
-                      <div className="mt-4 flex items-center gap-2 rounded-md border border-danger/30 bg-danger-bg px-3 py-2">
-                        <Link2Off className="h-4 w-4 shrink-0 text-danger" aria-hidden="true" />
-                        <span className="truncate text-small text-danger underline">
+                      <div
+                        className={cn(
+                          'mt-4 flex items-center gap-2 rounded-md border px-3 py-2 transition-colors',
+                          phase === 'done'
+                            ? 'border-danger/30 bg-danger-bg'
+                            : 'border-border bg-bg-muted',
+                        )}
+                      >
+                        <Link2Off
+                          className={cn(
+                            'h-4 w-4 shrink-0',
+                            phase === 'done' ? 'text-danger' : 'text-text-muted',
+                          )}
+                          aria-hidden="true"
+                        />
+                        <span
+                          className={cn(
+                            'truncate text-small',
+                            phase === 'done' ? 'text-danger underline' : 'text-text-muted',
+                          )}
+                        >
                           {selectedMessage.suspiciousLink}
                         </span>
                       </div>
                     )}
 
-                    {selectedMessage.isSuspicious ? (
-                      <div className="mt-5 rounded-lg border border-canary-400/40 bg-canary-bg p-4">
+                    {phase !== 'done' ? (
+                      <div className="mt-5 rounded-lg border border-border bg-bg-muted p-4">
+                        <ScanStatus label={scanLabel} reduceMotion={!!shouldReduceMotion} />
+                      </div>
+                    ) : selectedMessage.isSuspicious ? (
+                      <div className="mt-5 rounded-lg border border-teal-400/40 bg-teal-bg p-4">
                         <div className="flex items-center gap-2">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-canary-400">
-                            <ShieldAlert className="h-4 w-4 text-navy-900" aria-hidden="true" />
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-teal-500">
+                            <ShieldAlert className="h-4 w-4 text-white" aria-hidden="true" />
                           </span>
                           <p className="text-body font-semibold text-text">
                             Potential phishing attempt
@@ -383,7 +471,7 @@ export function ExtensionDemo() {
                         onClick={() => selectFile(file.id)}
                         className={cn(
                           'flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition-colors',
-                          isSelected ? 'bg-canary-bg' : 'hover:bg-bg-muted',
+                          isSelected ? 'bg-teal-bg' : 'hover:bg-bg-muted',
                         )}
                       >
                         <div className="flex w-full items-center gap-2 text-text">
@@ -430,12 +518,18 @@ export function ExtensionDemo() {
                     <div className="mt-5 rounded-lg border border-border bg-bg-muted p-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-body font-semibold text-text">Canary analysis</p>
-                        <Badge variant={CLASSIFICATION_BADGE_VARIANT[selectedFile.classification]}>
-                          {CLASSIFICATION_LABEL[selectedFile.classification]}
-                        </Badge>
+                        {phase === 'done' && (
+                          <Badge variant={CLASSIFICATION_BADGE_VARIANT[selectedFile.classification]}>
+                            {CLASSIFICATION_LABEL[selectedFile.classification]}
+                          </Badge>
+                        )}
                       </div>
 
-                      {selectedFile.signals ? (
+                      {phase !== 'done' ? (
+                        <div className="mt-3">
+                          <ScanStatus label={scanLabel} reduceMotion={!!shouldReduceMotion} />
+                        </div>
+                      ) : selectedFile.signals ? (
                         <>
                           <ul className="mt-3 space-y-1.5">
                             {selectedFile.signals.map((signal) => (

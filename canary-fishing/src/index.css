@@ -9,35 +9,21 @@
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
-  /* Primary brand accent: canary yellow (unchanged — reads equally well on dark) */
-  --color-canary-50: #fffdf2;
-  --color-canary-100: #fff8d6;
-  --color-canary-200: #ffeea8;
-  --color-canary-300: #ffe070;
-  --color-canary-400: #ffcf3d;
-  --color-canary-500: #f7c948;
-  --color-canary-600: #e0ac1f;
-  --color-canary-700: #b3860f;
-  /* Solid warm-dark panel bg for canary-branded callouts (an alpha blend of
-     canary-400 over the teal card would read olive-green, not gold). */
-  --color-canary-bg: #332b10;
-
-  /* Ink scale: dark text/icons used on top of BRIGHT surfaces (canary badges,
-     buttons) — independent of the page theme, so left dark in both modes. */
-  --color-navy-900: #10182a;
-  --color-navy-800: #1a2436;
-  --color-navy-700: #283449;
-  --color-navy-600: #3c4a63;
-  --color-navy-500: #59677f;
-  --color-navy-400: #7c8aa0;
-
-  /* Secondary accent: blue-teal, tuned for legibility on dark surfaces */
+  /* Primary brand accent: teal, built around #008080 (teal-500). Lighter
+     steps (200-400) are tuned for legibility as text/icon color directly on
+     the dark surfaces below; darker steps (600-800) are for solid-fill hover
+     and secondary emphasis. */
   --color-teal-200: #a8e6df;
   --color-teal-300: #6dd0c6;
   --color-teal-400: #4fc3bb;
-  --color-teal-500: #1ea39a;
-  --color-teal-600: #167f79;
-  --color-teal-700: #0f6460;
+  --color-teal-500: #008080;
+  --color-teal-600: #006666;
+  --color-teal-700: #004d4d;
+  --color-teal-800: #003333;
+  /* Solid dark panel bg for accent-highlighted callouts (an alpha blend of
+     teal-500 over the card reads too close to the surrounding surface — this
+     is tuned to read as a distinct, deliberately-highlighted panel). */
+  --color-teal-bg: #0d3a38;
 
   /* Surfaces: deep dark teal-navy page, lighter teal-blue elevated cards */
   --color-bg: #071b20;
@@ -126,8 +112,8 @@
   }
 
   ::selection {
-    background-color: var(--color-canary-300);
-    color: var(--color-navy-900);
+    background-color: var(--color-teal-300);
+    color: var(--color-bg);
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -1,5 +1,6 @@
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
+import { WhyItMatters } from './components/WhyItMatters'
 import { Features } from './components/Features'
 import { HowItWorks } from './components/HowItWorks'
 import { ExtensionDemo } from './components/ExtensionDemo'
@@ -14,6 +15,7 @@ function App() {
       <Navbar />
       <main>
         <Hero />
+        <WhyItMatters />
         <Features />
         <HowItWorks />
         <ExtensionDemo />

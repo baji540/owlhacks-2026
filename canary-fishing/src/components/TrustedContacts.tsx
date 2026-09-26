@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { BellRing, SlidersHorizontal, UserPlus, type LucideIcon } from 'lucide-react'
+import {
+  ArrowRight,
+  BellRing,
+  ShieldAlert,
+  SlidersHorizontal,
+  UserPlus,
+  type LucideIcon,
+} from 'lucide-react'
 import { Container } from './ui/Container'
 import { Section } from './ui/Section'
 import { Badge } from './ui/Badge'
@@ -146,8 +153,72 @@ export function TrustedContacts() {
               </div>
             </div>
 
+            <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+              <div className="flex items-center justify-between gap-2 border-b border-border px-5 py-4">
+                <p className="font-semibold text-text">How an alert reaches them</p>
+                <Badge variant="info">Preview</Badge>
+              </div>
+
+              <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-3">
+                <div className="flex flex-1 items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-500/10">
+                    <ShieldAlert className="h-4 w-4 text-teal-300" aria-hidden="true" />
+                  </span>
+                  <p className="text-small text-text-muted">Canary detects a serious threat</p>
+                </div>
+                <ArrowRight
+                  className="hidden h-4 w-4 shrink-0 text-border sm:block"
+                  aria-hidden="true"
+                />
+                <div className="flex flex-1 items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-500/10">
+                    <BellRing className="h-4 w-4 text-teal-300" aria-hidden="true" />
+                  </span>
+                  <p className="text-small text-text-muted">You receive a warning</p>
+                </div>
+                <ArrowRight
+                  className="hidden h-4 w-4 shrink-0 text-border sm:block"
+                  aria-hidden="true"
+                />
+                <div className="flex flex-1 items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-500/10 text-small font-semibold text-teal-300">
+                    S
+                  </span>
+                  <p className="text-small text-text-muted">Sarah is notified</p>
+                </div>
+              </div>
+
+              <div className="border-t border-border bg-bg-muted px-5 py-4">
+                <div className="rounded-lg border border-teal-400/40 bg-teal-bg p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-500">
+                      <BellRing className="h-4 w-4 text-white" aria-hidden="true" />
+                    </span>
+                    <p className="text-body font-semibold text-text">Canary Alert</p>
+                  </div>
+                  <p className="mt-2 text-small text-text-muted">
+                    Canary detected a suspicious message that may be trying to steal personal
+                    information.
+                  </p>
+                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-500/10 text-small font-semibold text-teal-300">
+                        S
+                      </span>
+                      <div>
+                        <p className="text-small font-semibold text-text">Sarah</p>
+                        <p className="text-small text-text-muted">Daughter</p>
+                      </div>
+                    </div>
+                    <span className="text-small font-medium text-success">was notified</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <p className="mt-4 text-small text-text-muted">
-              This is a concept mockup — Trusted Contacts notifications aren't connected yet.
+              This is a concept mockup — Trusted Contacts settings and notifications aren't
+              connected yet.
             </p>
           </motion.div>
         </div>
