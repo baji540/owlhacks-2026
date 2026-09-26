@@ -5,22 +5,47 @@
   "version": "0.1.0",
   "description": "Puts a plain-English green / yellow / red safety light on every email so scams are obvious before you click.",
   "minimum_chrome_version": "116",
-  "permissions": ["activeTab", "storage", "downloads", "scripting"],
-  "host_permissions": ["*://mail.google.com/*", "https://*/*"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "downloads",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://mail.google.com/*",
+    "https://*/*"
+  ],
   "background": {
     "service_worker": "background/background.js"
   },
   "content_scripts": [
     {
-      "matches": ["*://mail.google.com/*"],
-      "js": ["ui/banner.js", "content/content.js"],
-      "css": ["ui/injected-styles.css"],
+      "matches": [
+        "*://mail.google.com/*"
+      ],
+      "js": [
+        "ui/banner.js",
+        "content/content.js"
+      ],
+      "css": [
+        "ui/injected-styles.css"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "Canary — email safety shield"
+    "default_title": "Canary: email safety shield",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }
