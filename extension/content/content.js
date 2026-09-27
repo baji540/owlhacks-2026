@@ -311,9 +311,23 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
 
   let extensionAlive = true;
 
+  /** Stop quietly once this copy of the script has lost its extension (e.g. after a reload). */
+  function standDown() {
+    if (!extensionAlive) return;
+    extensionAlive = false;
+    observer?.disconnect();
+  }
+
   /** @returns {Promise<object|null>} the verdict payload, or null on any failure */
   async function requestAnalysis(payload) {
     if (!extensionAlive) return null;
+
+    // After the extension is reloaded, this old copy of the script is cut off.
+    // Newer Chrome removes chrome.runtime entirely instead of throwing, so check first.
+    if (!chrome.runtime?.id) {
+      standDown();
+      return null;
+    }
 
     try {
       const response = await chrome.runtime.sendMessage({
@@ -331,9 +345,11 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
     } catch (error) {
       // The old content script keeps running after an extension reload; once the
       // channel is gone there is nothing useful left to do, so stand down.
-      if (/Extension context invalidated|receiving end does not exist/i.test(error?.message ?? '')) {
-        extensionAlive = false;
-        observer?.disconnect();
+      if (
+        !chrome.runtime?.id ||
+        /Extension context invalidated|receiving end does not exist|reading 'sendMessage'/i.test(error?.message ?? '')
+      ) {
+        standDown();
         return null;
       }
       console.warn('[Canary] could not reach the background worker.', error);

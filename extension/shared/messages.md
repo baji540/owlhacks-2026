@@ -12,7 +12,7 @@ This document serves as the team contract between `content.js` (DOM parser), `ba
 2. `content.js` extracts sender, subject, and snippet/body text.
 3. `content.js` sends `ANALYZE_EMAIL` to `background.js`.
 4. `background.js` executes heuristic scoring and returns the structured evaluation object.
-
+git 
 ### Request Structure
 
 Sent via `chrome.runtime.sendMessage`:
