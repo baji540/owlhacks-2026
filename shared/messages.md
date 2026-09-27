@@ -331,6 +331,34 @@ Reply to it with `SCAN_DOWNLOAD` and `decision: "allow"` or `decision: "block"`.
 
 ---
 
+## `OPEN_ADD_CONTACT`
+
+**Direction:** `site/site-bridge.js` (content script on canary.fishing) → `background.js`
+
+Sent when a visitor presses **Add trusted contact** on canary.fishing. The worker saves
+`popupIntent: "add-contact"` in `chrome.storage.local` and calls `chrome.action.openPopup()`;
+the popup reads and clears the intent, switches to the Trusted contacts tab and opens the
+add form. If Chrome will not open the popup, the worker opens `popup/popup.html#add-contact`
+in a tab instead.
+
+```jsonc
+{ "type": "OPEN_ADD_CONTACT", "payload": {} }
+```
+
+Response payload — `OPEN_ADD_CONTACT_RESULT`:
+
+```jsonc
+{ "ok": true, "type": "OPEN_ADD_CONTACT_RESULT", "payload": { "opened": "popup" } } // or "tab"
+```
+
+The page and the bridge talk with `window.postMessage`:
+`{ source: "canary-site", type: "OPEN_ADD_CONTACT" }` in, and
+`{ source: "canary-extension", type: "OPEN_ADD_CONTACT_RESULT", ok }` back. The bridge also sets
+`document.documentElement.dataset.canaryExtension = "installed"` so the site can tell whether
+Canary is installed.
+
+---
+
 ## Adding a new action type
 
 1. Add the action type and both schemas to this file.
