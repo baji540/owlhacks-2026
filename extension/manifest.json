@@ -25,6 +25,7 @@
       ],
       "js": [
         "ui/banner.js",
+        "ui/links.js",
         "content/content.js"
       ],
       "css": [

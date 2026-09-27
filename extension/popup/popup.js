@@ -70,12 +70,15 @@ document.addEventListener("DOMContentLoaded", async () => {
  * Tabs
  * ------------------------------------------------------------------ */
 
+const TABS = ["status", "contacts", "downloads"];
+
 function showTab(name) {
-  const isContacts = name === "contacts";
-  document.getElementById("tab-status").hidden = isContacts;
-  document.getElementById("tab-contacts").hidden = !isContacts;
-  document.getElementById("tab-btn-status").setAttribute("aria-selected", String(!isContacts));
-  document.getElementById("tab-btn-contacts").setAttribute("aria-selected", String(isContacts));
+  const active = TABS.includes(name) ? name : "status";
+  TABS.forEach((tab) => {
+    document.getElementById(`tab-${tab}`).hidden = tab !== active;
+    document.getElementById(`tab-btn-${tab}`).setAttribute("aria-selected", String(tab === active));
+  });
+  if (active === "downloads") loadDownloads();
 }
 
 /* ------------------------------------------------------------------
@@ -238,12 +241,206 @@ function setupContactForm() {
   });
 }
 
+/* ------------------------------------------------------------------
+ * Downloads
+ * ui/links.js saves the open email's download links as
+ * chrome.storage.local.openEmailLinks; background/link-scanner.js checks each
+ * one (SCAN_LINK) with VirusTotal, Google Safe Browsing and quick checks.
+ * ------------------------------------------------------------------ */
+
+const PILL = { green: "Safe", yellow: "Caution", red: "Dangerous", unknown: "Not checked" };
+const RANK = { unknown: 0, green: 1, yellow: 2, red: 3 };
+const dlResults = new Map(); // url -> result
+const dlOpen = new Set(); // expanded rows
+let dlLinks = [];
+let dlLoadedKey = null;
+
+function dlDisplayName(link) {
+  if (link.fileName) return link.fileName;
+  if (link.text && !/^https?:/i.test(link.text)) return link.text;
+  try {
+    const u = new URL(link.url);
+    const last = decodeURIComponent(u.pathname.split("/").filter(Boolean).pop() || "");
+    return last || u.hostname;
+  } catch {
+    return link.url;
+  }
+}
+
+function dlHostLine(link) {
+  const kind = { file: "File", share: "File-sharing link", download: "Download link" }[link.kind] || "Link";
+  return `${kind} from ${link.host}`;
+}
+
+function updateDownloadCount() {
+  const badge = document.getElementById("dl-count");
+  if (!dlLinks.length) {
+    badge.hidden = true;
+    return;
+  }
+  const worst = dlLinks.reduce((w, l) => {
+    const r = dlResults.get(l.url)?.rating || "unknown";
+    return RANK[r] > RANK[w] ? r : w;
+  }, "unknown");
+  badge.hidden = false;
+  badge.textContent = String(dlLinks.length);
+  badge.className = `tab-count${worst === "red" ? " is-red" : worst === "yellow" ? " is-yellow" : ""}`;
+  badge.setAttribute("aria-label", `${dlLinks.length} download link${dlLinks.length === 1 ? "" : "s"}`);
+}
+
+function renderDownloadRow(li, link) {
+  const result = dlResults.get(link.url);
+  const checking = !result;
+  const rating = result ? result.rating : "unknown";
+  li.className = `dl-row is-${checking ? "checking" : rating}`;
+  li.querySelector(".dl-pill").textContent = checking ? "Checking…" : PILL[rating];
+
+  const details = li.querySelector(".dl-details");
+  const main = li.querySelector(".dl-main");
+  const open = dlOpen.has(link.url);
+  details.hidden = !open;
+  main.setAttribute("aria-expanded", String(open));
+  main.setAttribute("aria-label", `${dlDisplayName(link)}: ${checking ? "checking" : PILL[rating]}. Show details`);
+
+  li.querySelector(".dl-headline").textContent = checking ? "Checking this link…" : result.headline;
+  li.querySelector(".dl-advice").textContent = checking
+    ? "Canary is asking the security scanners about this link."
+    : result.error || result.advice;
+  li.querySelector(".dl-url").textContent = link.url;
+
+  const list = li.querySelector(".dl-sources");
+  list.replaceChildren();
+  (result?.sources || []).forEach((s) => {
+    const item = document.createElement("li");
+    const dot = document.createElement("span");
+    const flagClass = s.status === "flag" ? `is-flag-${s.rating === "red" ? "red" : "yellow"}` : s.status === "clear" ? "is-clear" : "";
+    dot.className = `dl-dot ${flagClass}`;
+    const text = document.createElement("span");
+    const name = document.createElement("b");
+    name.textContent = `${s.name}: `;
+    text.append(name, document.createTextNode(s.detail));
+    item.append(dot, text);
+    list.append(item);
+  });
+}
+
+function renderDownloads(state) {
+  const list = document.getElementById("dl-list");
+  const empty = document.getElementById("dl-empty");
+  const sub = document.getElementById("dl-sub");
+  const foot = document.getElementById("dl-foot");
+  const template = document.getElementById("download-template");
+
+  list.replaceChildren();
+  if (!state) {
+    sub.textContent = "Open an email in Gmail to check its download links.";
+    empty.textContent = "No email open yet.";
+    empty.hidden = false;
+    foot.hidden = true;
+    return;
+  }
+  sub.textContent = state.subject ? `From "${state.subject}"` : "From the open email";
+  empty.textContent = "This email has no download links.";
+  empty.hidden = dlLinks.length > 0;
+  foot.hidden = dlLinks.length === 0;
+
+  dlLinks.forEach((link) => {
+    const li = template.content.firstElementChild.cloneNode(true);
+    li.dataset.url = link.url;
+    li.querySelector(".dl-name").textContent = dlDisplayName(link);
+    li.querySelector(".dl-host").textContent = dlHostLine(link);
+    li.querySelector(".dl-main").addEventListener("click", () => {
+      if (dlOpen.has(link.url)) dlOpen.delete(link.url);
+      else dlOpen.add(link.url);
+      renderDownloadRow(li, link);
+    });
+    renderDownloadRow(li, link);
+    list.append(li);
+  });
+  updateDownloadCount();
+}
+
+async function scanDownloadLink(link, force = false) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: "SCAN_LINK",
+      payload: { url: link.url, fileName: link.fileName, force },
+    });
+    if (response && response.ok) {
+      dlResults.set(link.url, response.payload);
+    } else {
+      dlResults.set(link.url, {
+        rating: "unknown",
+        headline: "Could not check this link",
+        advice: response?.error?.message || "Canary could not reach its scanner. Try again.",
+        sources: [],
+      });
+    }
+  } catch {
+    dlResults.set(link.url, {
+      rating: "unknown",
+      headline: "Could not check this link",
+      advice: "Canary could not reach its scanner. Try again.",
+      sources: [],
+    });
+  }
+  const li = document.querySelector(`.dl-row[data-url="${CSS.escape(link.url)}"]`);
+  if (li) renderDownloadRow(li, link);
+  updateDownloadCount();
+}
+
+async function loadDownloads(force = false) {
+  let state = null;
+  try {
+    state = (await chrome.storage.local.get("openEmailLinks")).openEmailLinks || null;
+  } catch {
+    state = null;
+  }
+  const key = state ? `${state.subject}|${(state.links || []).map((l) => l.url).join(",")}` : "";
+  if (key === dlLoadedKey && !force) {
+    updateDownloadCount();
+    return;
+  }
+  dlLoadedKey = key;
+  dlLinks = state ? state.links || [] : [];
+  if (force) dlLinks.forEach((l) => dlResults.delete(l.url));
+  renderDownloads(state);
+  dlLinks.filter((l) => !dlResults.has(l.url)).forEach((l) => scanDownloadLink(l, force));
+}
+
+async function setupDownloads() {
+  document.getElementById("dl-rescan").addEventListener("click", () => loadDownloads(true));
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.openEmailLinks) loadDownloads();
+  });
+
+  // Say which online scanners are switched on
+  try {
+    const res = await chrome.runtime.sendMessage({ type: "GET_SCANNER_STATUS", payload: {} });
+    const on = res && res.ok ? res.payload : null;
+    if (on) {
+      const names = [
+        on.virusTotal && "VirusTotal",
+        on.safeBrowsing && "Google Safe Browsing",
+      ].filter(Boolean);
+      document.getElementById("dl-note").textContent = names.length
+        ? `Each link is checked with ${names.join(", ").replace(/, ([^,]*)$/, " and $1")}, plus Canary's own quick checks. Canary looks at the link; it never downloads the file.`
+        : "Online scanners are not set up yet, so only Canary's quick checks run. Add API keys in extension/config/keys.js.";
+    }
+  } catch {
+    /* keep the default note */
+  }
+  loadDownloads();
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   // Opened as a full tab (e.g. from "Add a trusted contact" in Gmail)
   if (window.innerWidth > 480) document.body.classList.add("in-tab");
 
   document.getElementById("tab-btn-status").addEventListener("click", () => showTab("status"));
   document.getElementById("tab-btn-contacts").addEventListener("click", () => showTab("contacts"));
+  document.getElementById("tab-btn-downloads").addEventListener("click", () => showTab("downloads"));
+  setupDownloads();
   // Opened from canary.fishing's "Add trusted contact" button?
   let intent = null;
   try {
@@ -253,7 +450,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     /* ignore */
   }
   const wantsAdd = intent === "add-contact" || location.hash === "#add-contact";
-  showTab(wantsAdd || location.hash === "#contacts" ? "contacts" : "status");
+  const hashTab = location.hash.replace("#", "");
+  showTab(wantsAdd || hashTab === "contacts" ? "contacts" : hashTab === "downloads" ? "downloads" : "status");
 
   setupContactForm();
   const contacts = await getContacts();

@@ -378,6 +378,96 @@ main { padding: 16px; display: grid; gap: 12px; }
 .link-btn:hover { color: var(--danger); }
 .btn-primary:focus-visible, .btn-outline:focus-visible, .btn-ghost:focus-visible, .link-btn:focus-visible { outline: 2px solid var(--teal-300); outline-offset: 2px; }
 
+/* ---------- Downloads ---------- */
+
+.tab { white-space: nowrap; font-size: 0.88em; padding-left: 4px; padding-right: 4px; }
+.tab-count {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 5px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 0.78em;
+  line-height: 18px;
+  color: var(--bg);
+  background: var(--teal-300);
+}
+.tab-count.is-red { background: var(--danger); }
+.tab-count.is-yellow { background: var(--warning); }
+
+.dl-row { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.dl-row:last-child { border-bottom: 0; }
+.dl-main {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.dl-main:focus-visible { outline: 2px solid var(--teal-300); outline-offset: 3px; border-radius: 8px; }
+.dl-main:hover .dl-name { color: var(--teal-300); }
+.dl-icon {
+  --ink: var(--teal-300);
+  --tint: rgba(0, 128, 128, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--ink);
+  background: var(--tint);
+}
+.dl-icon .icon { width: 20px; height: 20px; }
+
+.dl-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.8em;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--text-muted);
+  background: var(--bg-muted);
+}
+.dl-row.is-green  .dl-pill { color: var(--success); background: var(--success-bg); border-color: rgba(52, 211, 153, 0.25); }
+.dl-row.is-yellow .dl-pill { color: var(--warning); background: var(--warning-bg); border-color: rgba(251, 146, 60, 0.25); }
+.dl-row.is-red    .dl-pill { color: var(--danger);  background: var(--danger-bg);  border-color: rgba(248, 113, 113, 0.3); }
+.dl-row.is-green  .dl-icon { --ink: var(--success); --tint: var(--success-bg); }
+.dl-row.is-yellow .dl-icon { --ink: var(--warning); --tint: var(--warning-bg); }
+.dl-row.is-red    .dl-icon { --ink: var(--danger);  --tint: var(--danger-bg); }
+.dl-row.is-checking .dl-pill { animation: dl-pulse 1.2s ease-in-out infinite; }
+@keyframes dl-pulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .dl-row.is-checking .dl-pill { animation: none; } }
+
+.dl-details {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+.dl-headline { margin: 0; font-weight: 700; }
+.dl-row.is-red .dl-headline { color: var(--danger); }
+.dl-row.is-yellow .dl-headline { color: var(--warning); }
+.dl-row.is-green .dl-headline { color: var(--success); }
+.dl-advice { margin: 0; }
+.dl-sources { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; }
+.dl-sources li { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 8px; align-items: baseline; font-size: 0.88em; color: var(--text-muted); }
+.dl-sources b { color: var(--text); font-weight: 600; }
+.dl-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transform: translateY(-1px); }
+.dl-dot.is-clear { background: var(--success); }
+.dl-dot.is-flag-yellow { background: var(--warning); }
+.dl-dot.is-flag-red { background: var(--danger); }
+.dl-url { margin: 2px 0 0; font-size: 0.8em; color: var(--text-muted); overflow-wrap: anywhere; }
+
 /* Opened as a full tab (from "Add a trusted contact" in Gmail): center the panel */
 body.in-tab {
   margin: 40px auto;

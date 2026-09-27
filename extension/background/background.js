@@ -12,6 +12,16 @@
  * Dependency-free. Runs as a classic MV3 service worker (no modules, no imports).
  */
 
+/* Download-link scanner (Masnun): VirusTotal, URLhaus, Google Safe Browsing.
+ * API keys live in config/keys.js, which is git-ignored; without it the scanner
+ * still runs its built-in quick checks. See background/link-scanner.js. */
+try {
+  importScripts('/config/keys.js');
+} catch {
+  // No keys file yet: copy config/keys.example.js to config/keys.js and add keys.
+}
+importScripts('/background/link-scanner.js');
+
 const ENGINE_VERSION = '1.0.0';
 
 const RATING = { GREEN: 'green', YELLOW: 'yellow', RED: 'red' };
