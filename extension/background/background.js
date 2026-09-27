@@ -1156,7 +1156,29 @@ async function handleSetShieldsEnabled(payload) {
   return handleShieldsStatus();
 }
 
+/**
+ * canary.fishing's "Add trusted contact" button: open the popup straight on
+ * its add-contact form. The popup reads `popupIntent` when it loads.
+ * If Chrome refuses to open the popup (no focused window, older Chrome),
+ * fall back to the same page in a tab so the user is never stuck.
+ */
+async function handleOpenAddContact() {
+  await chrome.storage.local.set({ popupIntent: 'add-contact' });
+  try {
+    await chrome.action.openPopup();
+    return { opened: 'popup' };
+  } catch {
+    await chrome.storage.local.remove('popupIntent');
+    await chrome.tabs.create({ url: chrome.runtime.getURL('popup/popup.html#add-contact') });
+    return { opened: 'tab' };
+  }
+}
+
 const HANDLERS = {
+  OPEN_ADD_CONTACT: {
+    responseType: 'OPEN_ADD_CONTACT_RESULT',
+    run: () => handleOpenAddContact(),
+  },
   ANALYZE_EMAIL: {
     responseType: 'EMAIL_ANALYSIS_RESULT',
     run: (payload) => handleAnalyzeEmail(payload),

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowRight,
@@ -10,7 +10,6 @@ import {
 } from 'lucide-react'
 import { Container } from './ui/Container'
 import { Section } from './ui/Section'
-import { Badge } from './ui/Badge'
 import { Button } from './ui/Button'
 import { cn } from '../lib/cn'
 
@@ -43,7 +42,7 @@ const POINTS: Point[] = [
     icon: BellRing,
     title: 'Alerts only when it matters',
     description:
-      'Trusted contacts are notified for serious, high-confidence threats — not everyday noise.',
+      'Trusted contacts are only brought in for serious, high-confidence threats, not everyday noise.',
   },
   {
     icon: SlidersHorizontal,
@@ -52,8 +51,50 @@ const POINTS: Point[] = [
   },
 ]
 
+/**
+ * "Add trusted contact" opens the Canary extension on its add-contact form, so
+ * contacts are always saved through the extension (in Chrome, not on a server).
+ * The extension's site bridge (extension/site/site-bridge.js) marks the page with
+ * data-canary-extension="installed" and listens for this message.
+ */
+function useCanaryExtension() {
+  const [installed, setInstalled] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'opening' | 'failed'>('idle')
+
+  useEffect(() => {
+    const check = () =>
+      setInstalled(document.documentElement.dataset.canaryExtension === 'installed')
+    check()
+    window.addEventListener('canary-extension-ready', check)
+
+    function onResult(event: MessageEvent) {
+      if (event.source !== window || event.data?.source !== 'canary-extension') return
+      if (event.data.type === 'OPEN_ADD_CONTACT_RESULT') {
+        setStatus(event.data.ok ? 'idle' : 'failed')
+      }
+    }
+    window.addEventListener('message', onResult)
+    return () => {
+      window.removeEventListener('canary-extension-ready', check)
+      window.removeEventListener('message', onResult)
+    }
+  }, [])
+
+  function openAddContact() {
+    if (!installed) {
+      document.querySelector('#download')?.scrollIntoView({ behavior: 'smooth' })
+      return
+    }
+    setStatus('opening')
+    window.postMessage({ source: 'canary-site', type: 'OPEN_ADD_CONTACT' }, window.location.origin)
+  }
+
+  return { installed, status, openAddContact }
+}
+
 export function TrustedContacts() {
   const shouldReduceMotion = useReducedMotion()
+  const { installed, status, openAddContact } = useCanaryExtension()
   const [notify, setNotify] = useState<Record<string, boolean>>({
     Sarah: true,
     David: true,
@@ -70,8 +111,7 @@ export function TrustedContacts() {
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
           >
-            <Badge variant="info">Concept preview</Badge>
-            <h2 className="text-h2 mt-4">You don't have to face a scam alone.</h2>
+            <h2 className="text-h2">You don't have to face a scam alone.</h2>
             <p className="text-body mt-4 text-text-muted">
               Trusted Contacts let you designate family members, caregivers, or close friends
               who can be alerted when Canary detects a serious threat aimed at you.
@@ -100,7 +140,10 @@ export function TrustedContacts() {
           >
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
               <div className="border-b border-border px-5 py-4">
-                <p className="font-semibold text-text">Trusted Contacts</p>
+                <p className="font-semibold text-text">
+                  Trusted Contacts{' '}
+                  <span className="text-small font-normal text-text-muted">(example)</span>
+                </p>
                 <p className="text-small text-text-muted">Notified for high-risk alerts only</p>
               </div>
 
@@ -150,17 +193,26 @@ export function TrustedContacts() {
               </ul>
 
               <div className="border-t border-border px-5 py-4">
-                <Button variant="outline" size="sm" disabled className="w-full">
+                <Button variant="outline" size="sm" className="w-full" onClick={openAddContact}>
                   <UserPlus className="h-4 w-4" aria-hidden="true" />
                   Add trusted contact
                 </Button>
+                <p className="mt-2 text-center text-small text-text-muted" aria-live="polite">
+                  {!installed
+                    ? 'Install Canary first, then add your contacts from the extension.'
+                    : status === 'failed'
+                      ? 'Click the Canary icon in your toolbar, then open Trusted contacts.'
+                      : 'Opens Canary so you can add someone. Contacts stay in your browser.'}
+                </p>
               </div>
             </div>
 
             <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
               <div className="flex items-center justify-between gap-2 border-b border-border px-5 py-4">
-                <p className="font-semibold text-text">How an alert reaches them</p>
-                <Badge variant="info">Preview</Badge>
+                <p className="font-semibold text-text">
+                  How an alert reaches them{' '}
+                  <span className="text-small font-normal text-text-muted">(example)</span>
+                </p>
               </div>
 
               <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-3">
@@ -221,8 +273,8 @@ export function TrustedContacts() {
             </div>
 
             <p className="mt-4 text-small text-text-muted">
-              This is a concept mockup — Trusted Contacts settings and notifications aren't
-              connected yet.
+              Sarah, David and Emily are examples. Your own trusted contacts are added in the
+              Canary extension and saved only in your browser.
             </p>
           </motion.div>
         </div>

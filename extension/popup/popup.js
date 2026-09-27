@@ -244,10 +244,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("tab-btn-status").addEventListener("click", () => showTab("status"));
   document.getElementById("tab-btn-contacts").addEventListener("click", () => showTab("contacts"));
-  showTab(location.hash === "#contacts" ? "contacts" : "status");
+  // Opened from canary.fishing's "Add trusted contact" button?
+  let intent = null;
+  try {
+    intent = (await chrome.storage.local.get("popupIntent")).popupIntent || null;
+    if (intent) await chrome.storage.local.remove("popupIntent");
+  } catch {
+    /* ignore */
+  }
+  const wantsAdd = intent === "add-contact" || location.hash === "#add-contact";
+  showTab(wantsAdd || location.hash === "#contacts" ? "contacts" : "status");
 
   setupContactForm();
   const contacts = await getContacts();
   renderContacts(contacts);
-  if (location.hash === "#contacts" && !contacts.length) document.getElementById("add-open").click();
+  if (wantsAdd || (location.hash === "#contacts" && !contacts.length)) {
+    document.getElementById("add-open").click();
+  }
 });

@@ -32,6 +32,17 @@
       ],
       "run_at": "document_idle",
       "all_frames": false
+    },
+    {
+      "matches": [
+        "https://canary.fishing/*",
+        "https://www.canary.fishing/*",
+        "http://localhost:5173/*"
+      ],
+      "js": [
+        "site/site-bridge.js"
+      ],
+      "run_at": "document_start"
     }
   ],
   "action": {
