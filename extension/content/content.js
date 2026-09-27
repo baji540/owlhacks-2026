@@ -501,6 +501,146 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
     }
   }
 
+  /* ---------------------------------------------------------------- *
+   * Download links can make an email more dangerous
+   *
+   * The email engine judges the sender, wording and link addresses. It can't
+   * see what a linked FILE is, so an ordinary-looking email that links to
+   * malware still reads as safe. After an email opens, its download links go
+   * to the link scanner (background/link-scanner.js: VirusTotal, Google Safe
+   * Browsing, quick checks). If a link is flagged, the email is raised to that
+   * level everywhere: bird, warning card, inbox row and popup. Never lowered.
+   * ---------------------------------------------------------------- */
+
+  const LEVEL = { green: 1, yellow: 2, red: 3 };
+  const DOWNLOAD_LIKE =
+    /\.(exe|msi|msix|scr|bat|cmd|com|pif|cpl|js|jse|vbs|vbe|wsf|hta|ps1|lnk|jar|apk|dmg|pkg|iso|img|vhd|zip|rar|7z|gz|tgz|tar|cab|pdf|docx?|docm|xlsx?|xlsm|xlsb|pptx?|pptm|rtf|one|html?|svg)(\?|#|$)/i;
+
+  function downloadLinksOf(links) {
+    const classify = window.__canaryClassifyLink; // from ui/links.js, if loaded
+    const found = [];
+    for (const url of links ?? []) {
+      if (typeof classify === 'function') {
+        const link = classify(url, '');
+        if (link) found.push(link);
+      } else if (DOWNLOAD_LIKE.test(url)) {
+        found.push({ url, fileName: '' });
+      }
+    }
+    return found.slice(0, 10);
+  }
+
+  async function scanDownloadLinks(links) {
+    const results = await Promise.all(
+      links.map(async (link) => {
+        if (!chrome.runtime?.id) return null;
+        try {
+          const response = await chrome.runtime.sendMessage({
+            type: 'SCAN_LINK',
+            payload: { url: link.url, fileName: link.fileName },
+          });
+          return response?.ok ? { link, result: response.payload } : null;
+        } catch {
+          return null;
+        }
+      }),
+    );
+    return results.filter(Boolean);
+  }
+
+  function fileLabel(link) {
+    if (link.fileName) return link.fileName;
+    try {
+      const u = new URL(link.url);
+      return decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() || u.hostname);
+    } catch {
+      return 'a file';
+    }
+  }
+
+  /** Returns a raised verdict, or null when the links don't make things worse. */
+  function raiseForLinks(verdict, scanned) {
+    const worst = scanned
+      .filter((s) => LEVEL[s.result.rating])
+      .sort((a, b) => LEVEL[b.result.rating] - LEVEL[a.result.rating])[0];
+    if (!worst || LEVEL[worst.result.rating] <= (LEVEL[verdict.score] ?? 1)) return null;
+
+    const score = worst.result.rating;
+    const name = fileLabel(worst.link);
+    let host = '';
+    try {
+      host = new URL(worst.link.url).hostname.replace(/^www\./, '');
+    } catch {
+      /* keep empty */
+    }
+    const flagged = (worst.result.sources ?? []).find((s) => s.status === 'flag' && s.rating === score);
+    const why = flagged ? ` ${flagged.detail}` : '';
+    const where = host ? ` on ${host}` : '';
+    const red = score === 'red';
+
+    return {
+      ...verdict,
+      score,
+      threatCategory: 'malicious_link',
+      threatLabel: red ? 'Links to a dangerous file' : 'Links to a risky file',
+      simpleExplanation: red
+        ? `This email links to "${name}"${where}, and security scanners flag that download as dangerous.${why}`
+        : `This email links to "${name}"${where}, a download that needs extra care.${why}`,
+      actionRecommendation: red
+        ? 'Do not download or open the file. Delete this email, or ask someone you trust to look at it first.'
+        : 'Only download the file if you were expecting it from someone you know. When in doubt, ask someone you trust.',
+      badge: red
+        ? {
+            emoji: '🔴',
+            label: 'Scam Alert',
+            text: '🔴 Scam Alert',
+            className: 'canary-red',
+            ariaLabel: 'Scam alert. This email links to a dangerous file. Activate for a plain-English explanation.',
+          }
+        : {
+            emoji: '🟡',
+            label: 'Caution',
+            text: '🟡 Caution',
+            className: 'canary-yellow',
+            ariaLabel: 'Caution. This email links to a risky file. Activate for details.',
+          },
+      reasons: [
+        {
+          id: 'download_link_flagged',
+          category: 'malicious_link',
+          severity: red ? 'critical' : 'medium',
+          label: red ? 'Links to a dangerous file' : 'Links to a risky file',
+          explanation: worst.result.advice,
+          evidence: worst.link.url,
+        },
+        ...(verdict.reasons ?? []),
+      ],
+    };
+  }
+
+  /** Show a verdict on the open email and everywhere else it appears. */
+  function applyThreadVerdict(subjectEl, verdict, subject) {
+    removeExistingBadge(subjectEl);
+    attachBadge(subjectEl, buildBadge(verdict), 'append');
+    const threadId = threadIdOf(subjectEl);
+    rememberThreadVerdict(threadId, verdict);
+    if (threadId) {
+      document.querySelectorAll(SELECTORS.listRow).forEach((row) => {
+        if (threadIdOf(row) === threadId) badgeRow(row, verdict);
+      });
+    }
+    publishToPopup(verdict, subject);
+  }
+
+  async function raiseForDownloadLinks(subjectEl, verdict, data) {
+    const links = downloadLinksOf(data.links);
+    if (!links.length) return;
+    const raised = raiseForLinks(verdict, await scanDownloadLinks(links));
+    // The reader may have moved to another email while the scanners worked
+    if (!raised || !subjectEl.isConnected || subjectEl.dataset.canaryFingerprint !== data.fingerprint) return;
+    applyThreadVerdict(subjectEl, raised, data.subject);
+  }
+
   async function scanOpenThread() {
     const main = document.querySelector(SELECTORS.threadContainer);
     const subjectEl = main?.querySelector(SELECTORS.threadSubject);
@@ -539,18 +679,12 @@ console.log("🐤 CANARY: content.js loaded on", window.location.href);
       removeExistingBadge(subjectEl);
       if (verdict.paused) return;
 
-      // Inside the <h2> so the pill sits on the subject's baseline.
-      attachBadge(subjectEl, buildBadge(verdict), 'append');
+      // Show the email verdict right away (inside the <h2>, on the subject's
+      // baseline), and make the inbox row and popup match.
+      applyThreadVerdict(subjectEl, verdict, data.subject);
 
-      // Make the inbox row for this email match, now and on every later visit.
-      const threadId = threadIdOf(subjectEl);
-      rememberThreadVerdict(threadId, verdict);
-      if (threadId) {
-        document.querySelectorAll(SELECTORS.listRow).forEach((row) => {
-          if (threadIdOf(row) === threadId) badgeRow(row, verdict);
-        });
-      }
-      publishToPopup(verdict, data.subject);
+      // Then check its download links; a flagged file raises the whole email.
+      void raiseForDownloadLinks(subjectEl, verdict, data);
     } finally {
       inFlight.delete(data.fingerprint);
     }
