@@ -1,88 +1,48 @@
-# Canary — Email Threat Shield
-
-Canary is a senior-friendly Chrome extension (Manifest V3) that provides a simple "traffic light" security layer (🟢 Safe, 🟡 Caution, 🔴 Scam Alert) directly inside Gmail, helping protect users from phishing attempts, identity scams, and malicious downloads.
-
----
-
-## Features
-
-* **Traffic Light Indicators:** Automatically scans incoming emails and flags them with visual indicators (🟢 / 🟡 / 🔴) in the Gmail interface.
-* **Plain-English Explanations:** Explains security risks without confusing technical jargon so non-technical users can make safe decisions.
-* **Download Interceptor:** Monitors incoming downloads for dangerous executable extensions (`.exe`, `.bat`, `.scr`, `.vbs`) and pauses them with a warning.
-* **Modular Architecture:** Clean separation between Gmail DOM observation, background threat heuristics, and UI components.
+# Canary 🛡️🐥
+> Real-time, senior-focused Gmail phishing protection and automated guardian alert safety net.
 
 ---
 
-## Project Structure
+## 🎯 The Problem
+Billions of dollars are lost every year to phishing scams, with older adults targeted disproportionately. Traditional security tools fail them in two ways:
+1. **Cryptic Warnings:** Alerts rely on complex technical jargon, obscure domain strings, and confusing modal popups that users ignore.
+2. **False Alarms:** Legitimate marketing promotions, receipts, and order updates frequently get flagged, causing alert fatigue.
 
-```text
-owlhacks-2026/
-├── extension/
-│   ├── manifest.json            # Extension configuration (Manifest V3)
-│   ├── background/
-│   │   └── background.js        # Background service worker & threat engine
-│   ├── content/
-│   │   └── content.js           # Gmail DOM observer & badge injector
-│   ├── popup/
-│   │   ├── popup.html           # Extension toolbar popup interface
-│   │   └── popup.js             # Popup controls and shield status
-│   └── ui/
-│       ├── banner.js            # Injected alert banners and modal components
-│       └── injected-styles.css  # Styles for badges and banners
-├── shared/
-│   └── messages.md              # Internal message schemas & API contracts
-└── website/                     # Project landing and informational site
-
-```
+**Canary** transforms email safety into a visual, accessible experience inside Gmail while creating an automated safety net for caregivers and family.
 
 ---
 
-## Getting Started (Local Development)
-
-### Prerequisites
-
-* Google Chrome (Version 100+ recommended for Manifest V3 support)
-* Git
-
-### Installation
-
-1. **Clone the repository:**
-```bash
-git clone https://github.com/<your-org>/owlhacks-2026.git
-cd owlhacks-2026
-
-```
-
-
-2. **Load the Extension into Chrome:**
-* Open Chrome and navigate to `chrome://extensions`.
-* Enable **Developer mode** using the toggle switch in the top-right corner.
-* Click **Load unpacked** in the top-left corner.
-* Select the **`extension/`** folder (the folder containing `manifest.json`, **not** the root repository directory).
-
-
-3. **Verify:**
-* Open [Gmail](https://mail.google.com?utm_source=gemini).
-* Check the DevTools console (**F12**) to verify `content.js` and the background service worker are active.
-
-
+## ✨ Features
+* **Traffic-Light Inbox Badges:** Instantly marks rows in Gmail with high-contrast status dots (🟢 Safe, 🟡 Caution, 🔴 Scam Detected) directly in the inbox view.
+* **Plain-English Threat Banners:** Injects an accessible, senior-friendly warning directly above high-risk emails explaining threats clearly without technical jargon.
+* **Guardian Alert Safety Net:** When an email with a critical threat score is opened, Canary automatically triggers an alert email to designated family caregivers so they can intervene before money or credentials are lost.
+* **Commercial Domain Whitelist:** Verifies root domains and authentic subdomains across 30+ major services (Apple, Google, Amazon, major banks, shipping carriers) to prevent marketing promotions from triggering false alarms.
+* **Zero-Flicker In-Memory Caching:** Prevents badge disappearance and performance lag caused by Gmail's dynamic row re-rendering when transitioning from unread to read status.
 
 ---
 
-## Team & Contribution Guidelines
+## 🏗️ Architecture & Tech Stack
 
-* **Trunk-Based Workflow:** Work cleanly on `main` by respecting directory ownership:
-* `extension/background/` & `extension/content/`: Background threat engine & DOM scanning.
-* `extension/popup/` & `extension/ui/`: Popup UI, banners, and CSS styles.
-* `website/`: Project website and documentation.
+Canary is engineered as a **Chrome Extension (Manifest V3)**:
 
+* **Frontend (`content.js`, `ui/banner.js`):**
+  * Observes Gmail's dynamic Single Page Application (SPA) table rows (`tr.zA`) using a debounced `MutationObserver`.
+  * Handles navigation lifecycle transitions (`hashchange`, `popstate`) and re-injects cached badges on row state toggles.
+  * Injects accessible warning cards directly into the email body container.
 
-* **Syncing:** Always pull changes before pushing:
-```bash
-git pull --rebase origin main
-git push origin main
+* **Backend Service Worker (`background.js`):**
+  * Houses heuristic threat analysis and scoring logic.
+  * Parses sender addresses against the authentic domain whitelist.
+  * Maintains an in-memory threat evaluation cache and deduplicates guardian notification requests.
 
-```
+* **Popup UI (`popup/`):**
+  * Accessible settings card allowing seniors or family members to register guardian alert email credentials and inspect protection status.
 
+---
 
-* Refer to `shared/messages.md` for message passing schemas between scripts.
+## 🚀 Getting Started
+
+### Load the Extension in Chrome
+1. Clone this repository:
+   ```bash
+   git clone [https://github.com/baji540/owlhacks-2026.git](https://github.com/baji540/owlhacks-2026.git)
