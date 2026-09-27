@@ -359,6 +359,46 @@ Canary is installed.
 
 ---
 
+## `SCAN_LINK`
+
+**Direction:** `popup.js` (Downloads tab) → `background/link-scanner.js`
+
+`ui/links.js` saves the download links it finds in the open email as
+`chrome.storage.local.openEmailLinks = { subject, links: [{ url, text, fileName, host, kind }], at }`
+(`kind`: `"file"` | `"share"` | `"download"`; `null` when no email is open). The Downloads tab
+asks the scanner about each link. The scanner registers its own `onMessage` listener and only
+answers `SCAN_LINK` and `GET_SCANNER_STATUS`.
+
+```jsonc
+{ "type": "SCAN_LINK", "payload": { "url": "https://…/invoice.pdf.exe", "fileName": "invoice.pdf.exe", "force": false } }
+```
+
+Response payload — `LINK_SCAN_RESULT`:
+
+```jsonc
+{
+  "url": "https://…/invoice.pdf.exe",
+  "rating": "red",                 // "green" | "yellow" | "red" | "unknown" (no online scanner could answer)
+  "headline": "Dangerous download",
+  "advice": "Do not download or open this. …",
+  "sources": [                     // one entry per check
+    { "name": "Quick checks", "status": "flag", "rating": "red", "detail": "…" },
+    { "name": "Google Safe Browsing", "status": "skipped", "detail": "No Google Safe Browsing key added." },
+    { "name": "VirusTotal", "status": "pending", "detail": "VirusTotal is still scanning this new link. …" }
+  ],                               // status: "clear" | "flag" | "skipped" | "error" | "pending"
+  "checkedAt": 1727368421903,
+  "cached": false
+}
+```
+
+Results are cached for 6 hours in `chrome.storage.local.linkScanCache` (`force: true` skips the cache).
+VirusTotal calls are limited to 4 a minute to stay inside the free key.
+
+`GET_SCANNER_STATUS` (payload `{}`) → `SCANNER_STATUS`: `{ virusTotal, safeBrowsing }` booleans for
+which API keys are present in `extension/config/keys.js` (git-ignored; template in `keys.example.js`).
+
+---
+
 ## Adding a new action type
 
 1. Add the action type and both schemas to this file.

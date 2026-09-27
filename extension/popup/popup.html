@@ -33,6 +33,7 @@
     <nav class="tabs" role="tablist" aria-label="Canary sections">
       <button type="button" class="tab" role="tab" id="tab-btn-status" aria-controls="tab-status" aria-selected="true">Status</button>
       <button type="button" class="tab" role="tab" id="tab-btn-contacts" aria-controls="tab-contacts" aria-selected="false">Trusted contacts</button>
+      <button type="button" class="tab" role="tab" id="tab-btn-downloads" aria-controls="tab-downloads" aria-selected="false">Downloads<span id="dl-count" class="tab-count" hidden></span></button>
     </nav>
 
     <main id="tab-status" role="tabpanel" aria-labelledby="tab-btn-status">
@@ -109,6 +110,49 @@
         ask, and Gmail opens a ready-to-send email. Nothing is sent until you press Send.
       </p>
     </main>
+
+    <main id="tab-downloads" role="tabpanel" aria-labelledby="tab-btn-downloads" hidden>
+      <section class="tc-card">
+        <div class="tc-head">
+          <p class="tc-title">Download links</p>
+          <p class="tc-sub" id="dl-sub">Open an email in Gmail to check its download links.</p>
+        </div>
+
+        <ul id="dl-list" class="tc-list"></ul>
+        <p id="dl-empty" class="tc-empty">No email open yet.</p>
+
+        <div class="tc-foot" id="dl-foot" hidden>
+          <button type="button" id="dl-rescan" class="btn-outline">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            Check again
+          </button>
+        </div>
+      </section>
+
+      <p class="tc-note" id="dl-note">
+        Each link is checked with VirusTotal and Google Safe Browsing, plus Canary's own quick
+        checks. Canary looks at the link; it never downloads the file.
+      </p>
+    </main>
+
+    <template id="download-template">
+      <li class="dl-row">
+        <button type="button" class="dl-main" aria-expanded="false">
+          <span class="dl-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg></span>
+          <span class="tc-who">
+            <span class="tc-name dl-name"></span>
+            <span class="tc-rel dl-host"></span>
+          </span>
+          <span class="dl-pill"></span>
+        </button>
+        <div class="dl-details" hidden>
+          <p class="dl-headline"></p>
+          <p class="dl-advice"></p>
+          <ul class="dl-sources"></ul>
+          <p class="dl-url"></p>
+        </div>
+      </li>
+    </template>
 
     <template id="contact-template">
       <li class="tc-row">

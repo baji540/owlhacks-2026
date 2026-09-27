@@ -1,2 +1,5 @@
 cyberguardian-backend/
 .venv/
+
+# Scanner API keys (never commit)
+extension/config/keys.js
