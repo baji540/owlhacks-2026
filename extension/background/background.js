@@ -46,6 +46,8 @@ const REPUTABLE_DOMAINS = new Set([
   'amazon.com',
   'samsung.com',
   'meta.com',
+  'github.com',
+  'linkedin.com',
   // Streaming and media
   'netflix.com',
   'spotify.com',
